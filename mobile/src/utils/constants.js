@@ -4,22 +4,53 @@ export const API_URL = __DEV__
   ? 'http://172.21.138.98:3000/api'  // Mantén tu IP, pero usa tunnel en Expo
   : 'https://your-production-api.com/api';
 
-// Colors based on Kambio branding
+// Colors based on Kambio branding - Inspired by Diners Club design
 export const COLORS = {
-  primary: '#6C63FF',
-  secondary: '#5A52D5',
-  accent: '#FF6584',
+  // Primary palette
+  primary: '#5D6DD9',
+  primaryLight: '#7B8CFF',
+  primaryDark: '#4A5FD9',
+  secondary: '#6C7FFF',
+  secondaryLight: '#8E9FFF',
+
+  // Accent colors
+  accent: '#FF6B9D',
+  accentLight: '#FF8CB5',
+
+  // Status colors
   success: '#4CAF50',
+  successLight: '#81C784',
   warning: '#FFC107',
+  warningLight: '#FFD54F',
   error: '#F44336',
-  background: '#F8F9FA',
+  errorLight: '#E57373',
+
+  // Neutral colors
+  background: '#F5F7FA',
+  backgroundLight: '#FAFBFC',
   surface: '#FFFFFF',
-  text: '#212121',
-  textSecondary: '#757575',
+  surfaceElevated: '#FFFFFF',
+
+  // Text colors
+  text: '#1A202C',
+  textSecondary: '#718096',
+  textTertiary: '#A0AEC0',
   textLight: '#FFFFFF',
-  border: '#E0E0E0',
-  disabled: '#BDBDBD',
-  placeholder: '#9E9E9E'
+
+  // Border and divider colors
+  border: '#E2E8F0',
+  borderLight: '#EDF2F7',
+  divider: '#CBD5E0',
+
+  // Other
+  disabled: '#CBD5E0',
+  placeholder: '#A0AEC0',
+  overlay: 'rgba(26, 32, 44, 0.7)',
+
+  // Gradient colors
+  gradientStart: '#5D6DD9',
+  gradientMiddle: '#6C7FFF',
+  gradientEnd: '#7B8CFF'
 };
 
 // Typography
@@ -52,11 +83,59 @@ export const SPACING = {
 
 // Border Radius
 export const BORDER_RADIUS = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
   round: 999
+};
+
+// Shadows (iOS and Android compatible)
+export const SHADOWS = {
+  none: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0
+  },
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 4
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 12
+  },
+  colored: {
+    shadowColor: '#5D6DD9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8
+  }
 };
 
 // Default Values

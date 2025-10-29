@@ -1,22 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)",
-      "Bash(npm audit:*)",
-      "Bash(rm:*)",
-      "Bash(npm cache clean:*)",
-      "Bash(npm install)",
-      "Bash(npm ls:*)",
-      "Bash(node src/server.js:*)",
-      "Bash(netstat:*)",
-      "Bash(findstr:*)",
-      "Bash(taskkill:*)",
-      "Bash(docker-compose up:*)",
-      "Bash(timeout 10 bash:*)",
-      "Bash(git init:*)",
-      "Bash(git remote add:*)",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nFeat: Implement HistoryScreen with kambios data and UI improvements\n\n- Add getAllKambios() endpoint integration to display user transaction history\n- Extract goal names from kambio relationships for better context\n- Implement date formatting (Hoy, Ayer, or specific date) for transactions\n- Calculate and display total savings amount and transaction count\n- Add pull-to-refresh functionality to HistoryScreen\n- Remove muscle emoji from WelcomeScreen header for cleaner design\n- Reduce spacing between features and action buttons on WelcomeScreen\n- Add comprehensive console logging for debugging data flow\n- Implement proper response structure handling (kambios array extraction)\n- Use dedicated getAllKambios() API instead of extracting from goals\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFeat: Modernize UI/UX design inspired by Diners Club\n\nDesign System Updates:\n- Update color palette with Diners Club-inspired blues and purples\n- Add gradient colors for modern visual effects\n- Define comprehensive shadow system (sm, md, lg, xl, colored)\n- Expand border radius options (xs to xxl)\n- Enhance neutral and status color scales\n\nWelcomeScreen:\n- Add full-screen gradient background\n- Implement fade-in and slide-up animations\n- Redesign feature cards with glass-morphism effect\n- Update button styling with improved shadows\n- Change status bar to light-content for gradient background\n\nAuthentication Screens:\n- LoginScreen: Add fade/slide animations, improve input styling\n- RegisterScreen: Match LoginScreen design language\n- Add SafeAreaView for better device handling\n- Enhance typography with improved font weights and letter spacing\n- Implement better input containers with shadows\n- Add placeholder colors for better UX\n\nDashboardScreen:\n- Add fade-in animation on load\n- Redesign empty state with icon container and card layout\n- Add numerical badge to active goals section\n- Improve section headers with better visual hierarchy\n- Enhance spacing and padding for cleaner layout\n- Update refresh control colors to match theme\n\nGoalCard Component:\n- Implement press animation with scale effect\n- Add image overlay for better text contrast\n- Redesign footer with stats container\n- Add divider between stats for visual separation\n- Improve badge design for completed goals\n- Enhance shadows for depth perception\n- Update typography for better readability\n\nTechnical:\n- Install expo-linear-gradient for gradient support\n- Use Animated API for smooth micro-interactions\n- Apply consistent activeOpacity values\n- Implement proper shadow spreading across platforms\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

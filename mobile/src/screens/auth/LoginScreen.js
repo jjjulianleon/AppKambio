@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,11 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  Animated
 } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES } from '../../utils/constants';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 import { login } from '../../services/authService';
 import { isValidEmail } from '../../utils/helpers';
 
@@ -19,6 +21,24 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true
+      })
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     // Validation
@@ -53,98 +73,131 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Bienvenido de vuelta</Text>
-          <Text style={styles.subtitle}>Ingresa para continuar tu camino de ahorro</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="tu@email.com"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
           >
-            {loading ? (
-              <ActivityIndicator color={COLORS.textLight} />
-            ) : (
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
-            )}
-          </TouchableOpacity>
+            <View style={styles.header}>
+              <Text style={styles.title}>Bienvenido de vuelta</Text>
+              <Text style={styles.subtitle}>
+                Ingresa para continuar tu camino de ahorro
+              </Text>
+            </View>
 
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate(ROUTES.REGISTER)}
-          >
-            <Text style={styles.linkText}>
-              ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="tu@email.com"
+                    placeholderTextColor={COLORS.placeholder}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="••••••••"
+                    placeholderTextColor={COLORS.placeholder}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                  />
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.textLight} />
+                ) : (
+                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => navigation.navigate(ROUTES.REGISTER)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.linkText}>
+                  ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: COLORS.backgroundLight
+  },
+  keyboardView: {
+    flex: 1
   },
   scrollContent: {
     flexGrow: 1,
-    padding: SPACING.xl
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.xl
+  },
+  content: {
+    flex: 1
   },
   header: {
-    marginTop: SPACING.xl,
+    marginTop: SPACING.xxl,
     marginBottom: SPACING.xxl
   },
   title: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: 'bold',
+    fontSize: FONT_SIZES.xxxl * 1.3,
+    fontWeight: '800',
     color: COLORS.text,
-    marginBottom: SPACING.sm
+    marginBottom: SPACING.sm,
+    letterSpacing: -0.5
   },
   subtitle: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary
+    color: COLORS.textSecondary,
+    lineHeight: FONT_SIZES.md * 1.5,
+    marginTop: SPACING.xs
   },
   form: {
     flex: 1
   },
   inputGroup: {
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.xl
   },
   label: {
     fontSize: FONT_SIZES.md,
@@ -152,41 +205,51 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.sm
   },
+  inputContainer: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm
+  },
   input: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
+    borderWidth: 2,
+    borderColor: COLORS.borderLight,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
     fontSize: FONT_SIZES.md,
-    color: COLORS.text
+    color: COLORS.text,
+    fontWeight: '500'
   },
   button: {
     backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.md,
+    paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-    marginTop: SPACING.md
+    marginTop: SPACING.xl,
+    ...SHADOWS.md
   },
   buttonDisabled: {
-    backgroundColor: COLORS.disabled
+    backgroundColor: COLORS.disabled,
+    ...SHADOWS.none
   },
   buttonText: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.textLight
   },
   linkButton: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING.xl,
+    paddingVertical: SPACING.sm,
     alignItems: 'center'
   },
   linkText: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary
+    color: COLORS.textSecondary,
+    fontWeight: '500'
   },
   linkTextBold: {
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.primary
   }
 });

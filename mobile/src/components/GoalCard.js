@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '../utils/constants';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '../utils/constants';
 import { formatCurrency, calculateProgress } from '../utils/helpers';
 import ProgressBar from './ProgressBar';
 
@@ -8,96 +8,175 @@ const GoalCard = ({ goal, onPress }) => {
   const progress = calculateProgress(goal.current_amount, goal.target_amount);
   const isCompleted = goal.status === 'completed';
 
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4
+    }).start();
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.card, isCompleted && styles.cardCompleted]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      {goal.image_url && (
-        <Image
-          source={{ uri: goal.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-      )}
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        style={[styles.card, isCompleted && styles.cardCompleted]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+      >
+        {goal.image_url && (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: goal.image_url }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+            <View style={styles.imageOverlay} />
+          </View>
+        )}
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {goal.name}
-          </Text>
-          {isCompleted && (
-            <Text style={styles.completedBadge}>✓ Completada</Text>
-          )}
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.name} numberOfLines={2}>
+              {goal.name}
+            </Text>
+            {isCompleted && (
+              <View style={styles.completedBadge}>
+                <Text style={styles.completedBadgeText}>✓</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.progressSection}>
+            <ProgressBar
+              current={parseFloat(goal.current_amount)}
+              target={parseFloat(goal.target_amount)}
+              showLabels={true}
+            />
+          </View>
+
+          <View style={styles.footer}>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{goal.kambios?.length || 0}</Text>
+                <Text style={styles.statLabel}>Kambios</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{progress}%</Text>
+                <Text style={styles.statLabel}>Completado</Text>
+              </View>
+            </View>
+          </View>
         </View>
-
-        <ProgressBar
-          current={parseFloat(goal.current_amount)}
-          target={parseFloat(goal.target_amount)}
-          showLabels={true}
-        />
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            {goal.kambios?.length || 0} Kambios realizados
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.lg,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4
+    ...SHADOWS.md
   },
   cardCompleted: {
     borderWidth: 2,
     borderColor: COLORS.success
   },
+  imageContainer: {
+    width: '100%',
+    height: 160,
+    position: 'relative'
+  },
   image: {
     width: '100%',
-    height: 150
+    height: '100%'
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.primary,
+    opacity: 0.1
   },
   content: {
-    padding: SPACING.md
+    padding: SPACING.lg
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: SPACING.md
   },
   name: {
     fontSize: FONT_SIZES.xl,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.text,
-    flex: 1
+    flex: 1,
+    marginRight: SPACING.sm,
+    lineHeight: FONT_SIZES.xl * 1.3
   },
   completedBadge: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.success,
-    fontWeight: 'bold',
-    backgroundColor: COLORS.success + '20',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.round,
+    backgroundColor: COLORS.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.sm
+  },
+  completedBadgeText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textLight,
+    fontWeight: '700'
+  },
+  progressSection: {
+    marginBottom: SPACING.md
   },
   footer: {
     marginTop: SPACING.sm
   },
-  footerText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary
+  statsContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  statValue: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: SPACING.xs / 2
+  },
+  statLabel: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  divider: {
+    width: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SPACING.md
   }
 });
 
