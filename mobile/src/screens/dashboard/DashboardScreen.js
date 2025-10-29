@@ -24,8 +24,11 @@ const DashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [kambioLoading, setKambioLoading] = useState(false);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const heightAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadData();
@@ -63,8 +66,7 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   const handleKambio = async () => {
-    const activeGoal = goals.find(g => g.status === 'active');
-    if (!activeGoal) {
+    if (activeGoals.length === 0) {
       Alert.alert('Sin meta activa', 'Por favor crea una meta primero', [
         { text: 'Crear meta', onPress: () => navigation.navigate(ROUTES.CREATE_GOAL) },
         { text: 'Cancelar', style: 'cancel' }
@@ -72,11 +74,55 @@ const DashboardScreen = ({ navigation }) => {
       return;
     }
 
-    navigation.navigate(ROUTES.KAMBIO, { goal: activeGoal });
+    // Si hay más de una meta activa, mostrar selector
+    if (activeGoals.length > 1) {
+      const buttons = activeGoals.map(goal => {
+        const progress = Math.round((goal.current_amount / goal.target_amount) * 100) || 0;
+        return {
+          text: `${goal.name || 'Meta sin nombre'} (${progress}%)`,
+          onPress: () => navigation.navigate(ROUTES.KAMBIO, { goal })
+        };
+      });
+      buttons.push({ text: 'Cancelar', style: 'cancel' });
+
+      Alert.alert(
+        'Selecciona una meta',
+        '¿A qué meta quieres dirigir este ahorro?',
+        buttons
+      );
+    } else {
+      // Si solo hay una meta, ir directo
+      navigation.navigate(ROUTES.KAMBIO, { goal: activeGoals[0] });
+    }
   };
 
   const activeGoals = goals.filter(g => g.status === 'active');
   const completedGoals = goals.filter(g => g.status === 'completed');
+
+  const toggleCompleted = () => {
+    const willExpand = !completedExpanded;
+    const toValue = willExpand ? 1 : 0;
+    
+    setCompletedExpanded(willExpand);
+    
+    Animated.parallel([
+      Animated.timing(rotateAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: true
+      }),
+      Animated.timing(heightAnim, {
+        toValue,
+        duration: 300,
+        useNativeDriver: false
+      })
+    ]).start();
+  };
+
+  const arrowRotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg']
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,22 +189,56 @@ const DashboardScreen = ({ navigation }) => {
                   <Text style={styles.kambioHintBold}>¡Regístralo!</Text>
                 </Text>
               </View>
+
+              <View style={styles.section}>
+                <TouchableOpacity
+                  style={styles.newGoalHeader}
+                  onPress={() => navigation.navigate(ROUTES.CREATE_GOAL)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.sectionTitle}>Crea una nueva meta</Text>
+                  <Text style={styles.arrowIcon}>→</Text>
+                </TouchableOpacity>
+              </View>
             </>
           )}
 
           {completedGoals.length > 0 && (
             <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Metas completadas</Text>
-                <Text style={styles.celebrationEmoji}>🎉</Text>
-              </View>
-              {completedGoals.map(goal => (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: goal.id })}
-                />
-              ))}
+              <TouchableOpacity
+                style={styles.collapsibleHeader}
+                onPress={toggleCompleted}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.sectionHeader, { marginBottom: 0 }]}>
+                  <Text style={styles.sectionTitle}>Metas completadas</Text>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{completedGoals.length}</Text>
+                  </View>
+                </View>
+                <Animated.View style={{ transform: [{ rotate: arrowRotation }] }}>
+                  <Text style={styles.arrowIcon}>▼</Text>
+                </Animated.View>
+              </TouchableOpacity>
+              
+              <Animated.View
+                style={{
+                  opacity: heightAnim,
+                  maxHeight: heightAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 1000]
+                  }),
+                  overflow: 'hidden'
+                }}
+              >
+                {completedGoals.map(goal => (
+                  <GoalCard
+                    key={goal.id}
+                    goal={goal}
+                    onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: goal.id })}
+                  />
+                ))}
+              </Animated.View>
             </View>
           )}
         </Animated.View>
@@ -180,16 +260,16 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.lg
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.md
   },
   greeting: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
     fontWeight: '500'
   },
   userName: {
-    fontSize: FONT_SIZES.xxxl * 1.2,
+    fontSize: FONT_SIZES.xxxl,
     fontWeight: '800',
     color: COLORS.text,
     marginTop: SPACING.xs,
@@ -197,17 +277,29 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: SPACING.xl,
-    marginTop: SPACING.lg
+    marginTop: SPACING.md
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.md
   },
   sectionTitle: {
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.lg,
     fontWeight: '700',
     color: COLORS.text
+  },
+  arrowIcon: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.primary,
+    fontWeight: '700'
   },
   badge: {
     backgroundColor: COLORS.primary,
@@ -277,19 +369,32 @@ const styles = StyleSheet.create({
   },
   kambioSection: {
     paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.xxl,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.md,
     alignItems: 'center'
   },
   kambioHint: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: SPACING.lg,
+    marginTop: SPACING.sm,
     textAlign: 'center',
     fontWeight: '500'
   },
   kambioHintBold: {
     fontWeight: '700',
     color: COLORS.primary
+  },
+  newGoalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 2,
+    borderColor: COLORS.primary + '30',
+    ...SHADOWS.sm
   }
 });
 

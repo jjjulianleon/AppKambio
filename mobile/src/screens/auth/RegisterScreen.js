@@ -188,17 +188,18 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xl
   },
   content: {
-    flex: 1
+    flex: 1,
+    justifyContent: 'center'
   },
   header: {
-    marginTop: SPACING.xxl,
-    marginBottom: SPACING.xxl
+    marginTop: 0,
+    marginBottom: SPACING.lg
   },
   title: {
     fontSize: FONT_SIZES.xxxl * 1.3,
     fontWeight: '800',
     color: COLORS.text,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     letterSpacing: -0.5
   },
   subtitle: {
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   inputGroup: {
-    marginBottom: SPACING.xl
+    marginBottom: SPACING.md
   },
   label: {
     fontSize: FONT_SIZES.md,
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-    marginTop: SPACING.xl,
+    marginTop: SPACING.md,
     ...SHADOWS.md
   },
   buttonDisabled: {
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
     color: COLORS.textLight
   },
   linkButton: {
-    marginTop: SPACING.xl,
+    marginTop: SPACING.md,
     paddingVertical: SPACING.sm,
     alignItems: 'center'
   },

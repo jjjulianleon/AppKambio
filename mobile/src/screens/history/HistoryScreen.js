@@ -112,41 +112,48 @@ const HistoryScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mi Progreso</Text>
-      </View>
+      <FlatList
+        data={kambios}
+        renderItem={renderKambioItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
+        ListHeaderComponent={
+          <>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Mi Progreso</Text>
+            </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>${totalSaved.toFixed(2)}</Text>
-          <Text style={styles.statLabel}>Total ahorrado</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{totalKambios}</Text>
-          <Text style={styles.statLabel}>Kambios realizados</Text>
-        </View>
-      </View>
-
-      {kambios.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>📊</Text>
-          <Text style={styles.emptyTitle}>Sin historial aún</Text>
-          <Text style={styles.emptyText}>
-            Tus Kambios registrados aparecerán aquí
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={kambios}
-          renderItem={renderKambioItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        />
-      )}
+            <View style={styles.statsContainer}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>${totalSaved.toFixed(2)}</Text>
+                <Text style={styles.statLabel}>Total ahorrado</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{totalKambios}</Text>
+                <Text style={styles.statLabel}>Kambios{'\n'}realizados</Text>
+              </View>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>📊</Text>
+            <Text style={styles.emptyTitle}>Sin historial aún</Text>
+            <Text style={styles.emptyText}>
+              Tus Kambios registrados aparecerán aquí
+            </Text>
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -186,15 +193,17 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs
+    marginTop: SPACING.xs,
+    textAlign: 'center'
   },
   statDivider: {
     width: 1,
     backgroundColor: COLORS.border,
     marginHorizontal: SPACING.md
   },
-  listContainer: { paddingHorizontal: SPACING.xl, paddingBottom: 80 },
+  listContainer: { paddingBottom: 80 },
   kambioCard: {
+    marginHorizontal: SPACING.xl,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,

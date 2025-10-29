@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView
+  View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES } from '../../utils/constants';
 import { getStoredUser, logout } from '../../services/authService';
 
@@ -12,6 +13,12 @@ const SettingsScreen = ({ navigation }) => {
   useEffect(() => {
     loadUser();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+    }, [])
+  );
 
   const loadUser = async () => {
     try {
@@ -74,11 +81,15 @@ const SettingsScreen = ({ navigation }) => {
 
         {/* User Info Card */}
         <View style={styles.userCard}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {user?.full_name?.charAt(0).toUpperCase() || 'U'}
-            </Text>
-          </View>
+          {user?.profile_image ? (
+            <Image source={{ uri: user.profile_image }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>
+                {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
+          )}
           <Text style={styles.userName}>{user?.full_name || 'Usuario'}</Text>
           <Text style={styles.userEmail}>{user?.email || ''}</Text>
         </View>
@@ -91,7 +102,7 @@ const SettingsScreen = ({ navigation }) => {
               icon="👤"
               title="Editar Perfil"
               subtitle="Actualiza tu información personal"
-              onPress={() => Alert.alert('Próximamente', 'Esta función estará disponible pronto')}
+              onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
             />
             <SettingItem
               icon="🔔"
@@ -181,6 +192,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: SPACING.md
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.surface,
     marginBottom: SPACING.md
   },
   avatarText: {

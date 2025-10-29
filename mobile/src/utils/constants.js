@@ -173,6 +173,7 @@ export const ROUTES = {
 
   // Settings
   SETTINGS: 'Settings',
+  EDIT_PROFILE: 'EditProfile',
   NUDGE_SETTINGS: 'NudgeSettings'
 };
 

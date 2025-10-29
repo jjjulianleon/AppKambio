@@ -16,6 +16,7 @@ import CategoryScreen from '../screens/onboarding/CategoryScreen';
 import CreateGoalScreen from '../screens/goal/CreateGoalScreen';
 import GoalDetailScreen from '../screens/goal/GoalDetailScreen';
 import KambioScreen from '../screens/kambio/KambioScreen';
+import EditProfileScreen from '../screens/settings/EditProfileScreen';
 
 // Import tab navigator
 import MainTabNavigator from './MainTabNavigator';
@@ -81,7 +82,7 @@ const AppNavigator = () => {
           name={ROUTES.LOGIN}
           component={LoginScreen}
           options={{
-            title: 'Iniciar Sesión',
+            title: '',
             headerBackTitle: 'Inicio'
           }}
         />
@@ -89,7 +90,7 @@ const AppNavigator = () => {
           name={ROUTES.REGISTER}
           component={RegisterScreen}
           options={{
-            title: 'Registrarse',
+            title: '',
             headerBackTitle: 'Inicio'
           }}
         />
@@ -120,7 +121,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.GOAL_DETAIL}
           component={GoalDetailScreen}
-          options={{ title: 'Detalle de Meta' }}
+          options={{ 
+            title: '',
+            headerBackTitle: 'Página Principal'
+          }}
         />
 
         {/* Main App Screens */}
@@ -133,6 +137,14 @@ const AppNavigator = () => {
           name={ROUTES.KAMBIO}
           component={KambioScreen}
           options={{ title: 'Registrar Kambio', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name={ROUTES.EDIT_PROFILE}
+          component={EditProfileScreen}
+          options={{ 
+            title: 'Editar Perfil',
+            headerBackTitle: 'Perfil'
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

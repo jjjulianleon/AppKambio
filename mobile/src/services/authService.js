@@ -145,3 +145,8 @@ export const markOnboardingCompleted = async () => {
     console.error('Error marking onboarding as completed:', error);
   }
 };
+
+/**
+ * Alias for updateProfile
+ */
+export const updateUserProfile = updateProfile;

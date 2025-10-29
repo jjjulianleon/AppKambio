@@ -127,8 +127,15 @@ const styles = StyleSheet.create({
   kambioButton: { backgroundColor: COLORS.primary, margin: SPACING.xl, paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.xl, alignItems: 'center' },
   kambioButtonText: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.textLight },
-  deleteButton: { margin: SPACING.xl, paddingVertical: SPACING.md, alignItems: 'center' },
-  deleteButtonText: { fontSize: FONT_SIZES.md, color: COLORS.error }
+  deleteButton: { 
+    backgroundColor: COLORS.error, 
+    margin: SPACING.xl, 
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.md, 
+    borderRadius: BORDER_RADIUS.xl, 
+    alignItems: 'center' 
+  },
+  deleteButtonText: { fontSize: FONT_SIZES.md, fontWeight: 'bold', color: COLORS.textLight }
 });
 
 export default GoalDetailScreen;
