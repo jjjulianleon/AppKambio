@@ -54,14 +54,8 @@ const AppNavigator = () => {
   }
 
   // Determine initial route
-  let initialRouteName = ROUTES.WELCOME;
-  if (userLoggedIn) {
-    if (onboardingComplete) {
-      initialRouteName = 'MainTabs';
-    } else {
-      initialRouteName = ROUTES.PROFILE;
-    }
-  }
+  // Always start at Welcome screen for demo purposes
+  const initialRouteName = ROUTES.WELCOME;
 
   return (
     <NavigationContainer>
