@@ -24,7 +24,7 @@ export const formatPercentage = (value) => {
  */
 export const calculateProgress = (current, target) => {
   if (target === 0) return 0;
-  return Math.min((current / target) * 100, 100);
+  return Math.round(Math.min((current / target) * 100, 100));
 };
 
 /**
