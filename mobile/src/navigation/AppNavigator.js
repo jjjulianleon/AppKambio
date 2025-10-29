@@ -80,12 +80,18 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.LOGIN}
           component={LoginScreen}
-          options={{ title: 'Iniciar Sesión' }}
+          options={{
+            title: 'Iniciar Sesión',
+            headerBackTitle: 'Inicio'
+          }}
         />
         <Stack.Screen
           name={ROUTES.REGISTER}
           component={RegisterScreen}
-          options={{ title: 'Registrarse' }}
+          options={{
+            title: 'Registrarse',
+            headerBackTitle: 'Inicio'
+          }}
         />
 
         {/* Onboarding Screens */}
