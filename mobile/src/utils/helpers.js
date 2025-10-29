@@ -4,7 +4,8 @@
  * @returns {string}
  */
 export const formatCurrency = (amount) => {
-  return `$${parseFloat(amount).toFixed(2)}`;
+  const num = parseFloat(amount);
+  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 /**

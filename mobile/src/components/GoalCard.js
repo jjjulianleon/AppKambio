@@ -72,7 +72,9 @@ const GoalCard = ({ goal, onPress }) => {
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{goal.kambios?.length || 0}</Text>
-                <Text style={styles.statLabel}>Kambios</Text>
+                <Text style={styles.statLabel}>
+                  {(goal.kambios?.length || 0) === 1 ? 'Kambio' : 'Kambios'}
+                </Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.statItem}>

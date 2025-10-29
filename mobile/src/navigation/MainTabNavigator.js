@@ -51,7 +51,7 @@ const MainTabNavigator = () => {
         name="HistoryTab"
         component={HistoryScreen}
         options={{
-          tabBarLabel: 'Progreso',
+          tabBarLabel: 'Kambio',
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="📊" color={color} />
           )

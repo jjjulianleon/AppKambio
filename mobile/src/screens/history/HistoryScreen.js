@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   RefreshControl, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../utils/constants';
 import { getAllKambios } from '../../services/goalService';
+import { formatCurrency } from '../../utils/helpers';
 
 const HistoryScreen = ({ navigation }) => {
   const [kambios, setKambios] = useState([]);
@@ -17,6 +19,12 @@ const HistoryScreen = ({ navigation }) => {
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHistory();
+    }, [])
+  );
 
   const loadHistory = async () => {
     try {
@@ -128,12 +136,12 @@ const HistoryScreen = ({ navigation }) => {
         ListHeaderComponent={
           <>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>Mi Progreso</Text>
+              <Text style={styles.headerTitle}>Mi Kambio</Text>
             </View>
 
             <View style={styles.statsContainer}>
               <View style={styles.statBox}>
-                <Text style={styles.statValue}>${totalSaved.toFixed(2)}</Text>
+                <Text style={styles.statValue}>{formatCurrency(totalSaved)}</Text>
                 <Text style={styles.statLabel}>Total ahorrado</Text>
               </View>
               <View style={styles.statDivider} />
@@ -176,7 +184,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     margin: SPACING.xl,
     marginTop: SPACING.lg,
-    padding: SPACING.xl,
+    padding: SPACING.lg,
+    paddingVertical: SPACING.xl,
     borderRadius: BORDER_RADIUS.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -184,11 +193,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3
   },
-  statBox: { flex: 1, alignItems: 'center' },
+  statBox: { 
+    flex: 1, 
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xs
+  },
   statValue: {
-    fontSize: FONT_SIZES.xxxl,
+    fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
-    color: COLORS.primary
+    color: COLORS.primary,
+    textAlign: 'center',
+    flexWrap: 'wrap',
+    maxWidth: '100%'
   },
   statLabel: {
     fontSize: FONT_SIZES.sm,

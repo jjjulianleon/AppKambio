@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: FONT_SIZES.sm,
     fontWeight: 'bold',
-    color: COLORS.textLight
+    color: COLORS.text
   }
 });
 

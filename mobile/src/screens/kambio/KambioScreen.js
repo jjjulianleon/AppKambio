@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView,
@@ -12,6 +12,8 @@ const KambioScreen = ({ navigation, route }) => {
   const [amount, setAmount] = useState(DEFAULT_KAMBIO_AMOUNT.toString());
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
+  const descriptionInputRef = useRef(null);
 
   const handleSubmit = async () => {
     const amountValue = parseFloat(amount);
@@ -54,6 +56,7 @@ const KambioScreen = ({ navigation, route }) => {
       keyboardVerticalOffset={100}
     >
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -87,12 +90,18 @@ const KambioScreen = ({ navigation, route }) => {
             <Text style={styles.label}>Descripción (opcional)</Text>
             <View style={styles.descriptionContainer}>
               <TextInput
+                ref={descriptionInputRef}
                 style={styles.input}
                 placeholder="Ej: Evité comprar café"
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={3}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
+                }}
               />
               <TouchableOpacity
                 style={styles.confirmButtonDescription}
