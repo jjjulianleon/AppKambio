@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   StatusBar,
   ScrollView,
-  Animated
+  Animated,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 
 const WelcomeScreen = ({ navigation }) => {
@@ -32,14 +32,9 @@ const WelcomeScreen = ({ navigation }) => {
   }, []);
 
   return (
-    <LinearGradient
-      colors={[COLORS.gradientStart, COLORS.gradientMiddle, COLORS.gradientEnd]}
-      style={styles.gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
-      <StatusBar barStyle="light-content" />
-      <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -54,7 +49,11 @@ const WelcomeScreen = ({ navigation }) => {
             ]}
           >
             <View style={styles.header}>
-              <Text style={styles.title}>Kambio</Text>
+              <Image
+                source={require('../../../assets/images/logoKambio.jpg')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
               <Text style={styles.subtitle}>
                 Transforma tus gastos hormiga{'\n'}en ahorro inteligente
               </Text>
@@ -81,17 +80,11 @@ const WelcomeScreen = ({ navigation }) => {
 
             <View style={styles.actions}>
               <TouchableOpacity
+                style={styles.primaryButton}
                 activeOpacity={0.8}
                 onPress={() => navigation.navigate(ROUTES.REGISTER)}
               >
-                <LinearGradient
-                  colors={[COLORS.textLight, COLORS.textLight]}
-                  style={styles.primaryButton}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.primaryButtonText}>Comenzar</Text>
-                </LinearGradient>
+                <Text style={styles.primaryButtonText}>Comenzar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -105,7 +98,7 @@ const WelcomeScreen = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -119,10 +112,11 @@ const FeatureItem = ({ emoji, text }) => (
 );
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1
-  },
   container: {
+    flex: 1,
+    backgroundColor: COLORS.textLight
+  },
+  safeArea: {
     flex: 1
   },
   scrollContent: {
@@ -139,20 +133,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: SPACING.xl
   },
-  title: {
-    fontSize: FONT_SIZES.xxxl * 1.8,
-    fontWeight: '800',
-    color: COLORS.textLight,
-    marginBottom: SPACING.md,
-    letterSpacing: -1
+  logo: {
+    width: 180,
+    height: 180,
+    marginBottom: SPACING.lg
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.textLight,
-    opacity: 0.9,
+    color: COLORS.primary,
     textAlign: 'center',
     lineHeight: FONT_SIZES.lg * 1.5,
-    paddingHorizontal: SPACING.md
+    paddingHorizontal: SPACING.md,
+    fontWeight: '600'
   },
   features: {
     marginVertical: SPACING.xl,
@@ -162,17 +154,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: COLORS.primary,
     padding: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)'
+    ...SHADOWS.md
   },
   featureIconContainer: {
     width: 50,
     height: 50,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: COLORS.textLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md
@@ -184,13 +175,14 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.textLight,
     flex: 1,
-    fontWeight: '500'
+    fontWeight: '600'
   },
   actions: {
     marginTop: SPACING.lg,
     paddingBottom: SPACING.md
   },
   primaryButton: {
+    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
@@ -200,7 +192,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
-    color: COLORS.primary
+    color: COLORS.textLight
   },
   secondaryButton: {
     paddingVertical: SPACING.md,
@@ -209,9 +201,9 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textLight,
+    color: COLORS.primary,
     fontWeight: '600',
-    opacity: 0.9
+    textDecorationLine: 'underline'
   }
 });
 
