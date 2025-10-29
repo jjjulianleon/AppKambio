@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xxl
   },
   logo: {
-    width: 240,
-    height: 240,
+    width: 300,
+    height: 300,
     marginBottom: SPACING.xl
   },
   subtitle: {
