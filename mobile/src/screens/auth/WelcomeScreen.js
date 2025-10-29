@@ -132,7 +132,8 @@ const styles = StyleSheet.create({
   },
   callToAction: {
     paddingHorizontal: SPACING.xl,
-    marginTop: SPACING.xxl
+    marginTop: SPACING.xxl,
+    marginBottom: SPACING.xxl
   },
   ctaText: {
     fontSize: FONT_SIZES.xl,
@@ -165,8 +166,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.primary,
-    fontWeight: '600',
-    textDecorationLine: 'underline'
+    fontWeight: '600'
   }
 });
 
