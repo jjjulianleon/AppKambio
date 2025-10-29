@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Kambio",
+    "slug": "kambio",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#6C63FF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kambio.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#6C63FF"
+      },
+      "package": "com.kambio.app",
+      "permissions": [
+        "NOTIFICATIONS"
+      ]
+    }
+  }
+}
