@@ -48,34 +48,23 @@ const WelcomeScreen = ({ navigation }) => {
               }
             ]}
           >
-            <View style={styles.header}>
-              <Image
-                source={require('../../../assets/images/logoKambio.jpg')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Text style={styles.subtitle}>
-                Transforma tus gastos hormiga{'\n'}en ahorro inteligente
-              </Text>
-            </View>
+            <View style={styles.mainContent}>
+              <View style={styles.header}>
+                <Image
+                  source={require('../../../assets/images/logoKambio.jpg')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+                <Text style={styles.subtitle}>
+                  Transforma tus gastos hormiga{'\n'}en ahorro inteligente
+                </Text>
+              </View>
 
-            <View style={styles.features}>
-              <FeatureItem
-                emoji="🎯"
-                text="Crea metas de ahorro realistas"
-              />
-              <FeatureItem
-                emoji="☕"
-                text="Identifica tus gastos hormiga"
-              />
-              <FeatureItem
-                emoji="📱"
-                text="Recibe recordatorios inteligentes"
-              />
-              <FeatureItem
-                emoji="🎉"
-                text="Celebra cada Kambio"
-              />
+              <View style={styles.callToAction}>
+                <Text style={styles.ctaText}>
+                  ¿Estás listo para hacer el Kambio?
+                </Text>
+              </View>
             </View>
 
             <View style={styles.actions}>
@@ -102,15 +91,6 @@ const WelcomeScreen = ({ navigation }) => {
   );
 };
 
-const FeatureItem = ({ emoji, text }) => (
-  <View style={styles.featureItem}>
-    <View style={styles.featureIconContainer}>
-      <Text style={styles.featureEmoji}>{emoji}</Text>
-    </View>
-    <Text style={styles.featureText}>{text}</Text>
-  </View>
-);
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -126,17 +106,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xxl,
-    justifyContent: 'space-between'
+    justifyContent: 'center'
+  },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   header: {
     alignItems: 'center',
-    marginTop: SPACING.xl
+    marginBottom: SPACING.xxl
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: SPACING.lg
+    width: 240,
+    height: 240,
+    marginBottom: SPACING.xl
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
@@ -146,40 +130,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     fontWeight: '600'
   },
-  features: {
-    marginVertical: SPACING.xl,
-    paddingHorizontal: SPACING.sm
+  callToAction: {
+    paddingHorizontal: SPACING.xl,
+    marginTop: SPACING.xxl
   },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-    backgroundColor: COLORS.primary,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.md
-  },
-  featureIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.textLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md
-  },
-  featureEmoji: {
-    fontSize: 28
-  },
-  featureText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textLight,
-    flex: 1,
-    fontWeight: '600'
+  ctaText: {
+    fontSize: FONT_SIZES.xl,
+    color: COLORS.primary,
+    textAlign: 'center',
+    fontWeight: '700',
+    lineHeight: FONT_SIZES.xl * 1.4
   },
   actions: {
-    marginTop: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingBottom: SPACING.xl
   },
   primaryButton: {
     backgroundColor: COLORS.primary,
