@@ -6,12 +6,16 @@ import {
 } from 'react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, DEFAULT_KAMBIO_AMOUNT } from '../../utils/constants';
 import { createKambio } from '../../services/goalService';
+import CelebrationModal from '../../components/CelebrationModal';
+import { formatCurrency } from '../../utils/helpers';
 
 const KambioScreen = ({ navigation, route }) => {
   const { goal } = route.params;
   const [amount, setAmount] = useState(DEFAULT_KAMBIO_AMOUNT.toString());
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState({ type: 'kambio', message: '' });
   const scrollViewRef = useRef(null);
   const descriptionInputRef = useRef(null);
 
@@ -30,23 +34,33 @@ const KambioScreen = ({ navigation, route }) => {
         description: description.trim() || 'Ahorro registrado'
       });
 
-      Alert.alert(
-        '¡Felicitaciones! 🎉',
-        `Has sumado $${amountValue} a tu meta "${goal.name}"`,
-        [
-          {
-            text: 'Ver progreso',
-            onPress: () => {
-              navigation.goBack();
-            }
-          }
-        ]
-      );
+      // Check if goal was completed
+      const newAmount = (goal.current_amount || 0) + amountValue;
+      const isGoalCompleted = newAmount >= goal.target_amount;
+
+      if (isGoalCompleted) {
+        setCelebrationData({
+          type: 'goal',
+          message: `¡Completaste tu meta "${goal.name}"! Has ahorrado ${formatCurrency(newAmount)} de ${formatCurrency(goal.target_amount)}`
+        });
+      } else {
+        setCelebrationData({
+          type: 'kambio',
+          message: `Has sumado ${formatCurrency(amountValue)} a tu meta "${goal.name}"`
+        });
+      }
+
+      setShowCelebration(true);
     } catch (error) {
       Alert.alert('Error', error.message || 'No se pudo registrar el Kambio');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseCelebration = () => {
+    setShowCelebration(false);
+    navigation.goBack();
   };
 
   return (
@@ -134,6 +148,14 @@ const KambioScreen = ({ navigation, route }) => {
         </View>
       </View>
       </ScrollView>
+
+      <CelebrationModal
+        visible={showCelebration}
+        onClose={handleCloseCelebration}
+        title={celebrationData.type === 'goal' ? '¡Meta Completada!' : '¡Excelente!'}
+        message={celebrationData.message}
+        type={celebrationData.type}
+      />
     </KeyboardAvoidingView>
   );
 };
