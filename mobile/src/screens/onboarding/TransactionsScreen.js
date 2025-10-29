@@ -10,7 +10,9 @@ import {
   Modal,
   ActivityIndicator,
   Animated,
-  Platform
+  Platform,
+  KeyboardAvoidingView,
+  Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
@@ -235,75 +237,113 @@ const TransactionsScreen = ({ navigation }) => {
         transparent={true}
         onRequestClose={() => setShowModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Nueva transacción</Text>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <ScrollView
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Nueva transacción</Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Descripción</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej: Almuerzo en restaurante"
-                placeholderTextColor={COLORS.placeholder}
-                value={description}
-                onChangeText={setDescription}
-              />
-            </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Descripción</Text>
+                  <View style={styles.inputWithButton}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ej: Almuerzo en restaurante"
+                      placeholderTextColor={COLORS.placeholder}
+                      value={description}
+                      onChangeText={setDescription}
+                      returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
+                    />
+                    <TouchableOpacity
+                      style={styles.confirmButton}
+                      onPress={() => Keyboard.dismiss()}
+                    >
+                      <Text style={styles.confirmButtonText}>✓</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Monto (USD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0.00"
-                placeholderTextColor={COLORS.placeholder}
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
-            </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Monto (USD)</Text>
+                  <View style={styles.inputWithButton}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="0.00"
+                      placeholderTextColor={COLORS.placeholder}
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="decimal-pad"
+                      returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
+                    />
+                    <TouchableOpacity
+                      style={styles.confirmButton}
+                      onPress={() => Keyboard.dismiss()}
+                    >
+                      <Text style={styles.confirmButtonText}>✓</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Categoría</Text>
-              <View style={styles.categoryGrid}>
-                {EXPENSE_CATEGORIES.map((cat) => (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Categoría</Text>
+                  <View style={styles.categoryGrid}>
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryChip,
+                          selectedCategory === cat.id && styles.categoryChipSelected
+                        ]}
+                        onPress={() => {
+                          Keyboard.dismiss();
+                          setSelectedCategory(cat.id);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[
+                          styles.categoryChipText,
+                          selectedCategory === cat.id && styles.categoryChipTextSelected
+                        ]}>
+                          {cat.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.modalButtons}>
                   <TouchableOpacity
-                    key={cat.id}
-                    style={[
-                      styles.categoryChip,
-                      selectedCategory === cat.id && styles.categoryChipSelected
-                    ]}
-                    onPress={() => setSelectedCategory(cat.id)}
+                    style={styles.modalCancelButton}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setShowModal(false);
+                    }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.categoryChipText,
-                      selectedCategory === cat.id && styles.categoryChipTextSelected
-                    ]}>
-                      {cat.label}
-                    </Text>
+                    <Text style={styles.modalCancelText}>Cancelar</Text>
                   </TouchableOpacity>
-                ))}
+                  <TouchableOpacity
+                    style={styles.modalAddButton}
+                    onPress={handleAddTransaction}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.modalAddText}>Agregar</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setShowModal(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.modalCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalAddButton}
-                onPress={handleAddTransaction}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalAddText}>Agregar</Text>
-              </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -461,6 +501,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end'
   },
+  modalScrollView: {
+    maxHeight: '90%'
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-end'
+  },
   modalContent: {
     backgroundColor: COLORS.backgroundLight,
     borderTopLeftRadius: BORDER_RADIUS.xxl,
@@ -483,7 +530,13 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.sm
   },
+  inputWithButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm
+  },
   input: {
+    flex: 1,
     backgroundColor: COLORS.surface,
     borderWidth: 2,
     borderColor: COLORS.borderLight,
@@ -493,6 +546,20 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.text,
     fontWeight: '500'
+  },
+  confirmButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.round,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.sm
+  },
+  confirmButtonText: {
+    fontSize: 20,
+    color: COLORS.textLight,
+    fontWeight: '700'
   },
   categoryGrid: {
     flexDirection: 'row',
