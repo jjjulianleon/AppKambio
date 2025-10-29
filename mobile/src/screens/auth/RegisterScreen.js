@@ -185,18 +185,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
     paddingBottom: SPACING.xl
   },
   content: {
-    flex: 1,
-    justifyContent: 'center'
+    flex: 1
   },
   header: {
     marginTop: 0,
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.md
   },
   title: {
-    fontSize: FONT_SIZES.xxxl * 1.3,
+    fontSize: FONT_SIZES.xxxl,
     fontWeight: '800',
     color: COLORS.text,
     marginBottom: SPACING.xs,
