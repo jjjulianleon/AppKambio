@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../utils/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../../utils/constants';
 import { getAllKambios } from '../../services/goalService';
 import { formatCurrency } from '../../utils/helpers';
 
@@ -39,22 +39,38 @@ const HistoryScreen = ({ navigation }) => {
       // Map kambios and include goal name if available
       let allKambios = [];
       if (Array.isArray(kambiosArray) && kambiosArray.length > 0) {
-        allKambios = kambiosArray.map(k => ({
-          ...k,
-          goalName: k.goal?.name || 'Meta de ahorro', // Extract goal name from relationship
-          id: k.id || Math.random() // Ensure id exists
-        }));
+        allKambios = kambiosArray.map(k => {
+          const kambio = {
+            id: k.id || Math.random(),
+            amount: k.amount,
+            transaction_type: k.transaction_type || 'credit', // Default to credit if not specified
+            description: k.description,
+            created_at: k.created_at,
+            updated_at: k.updated_at,
+            goal_id: k.goal_id,
+            user_id: k.user_id,
+            expense_category_id: k.expense_category_id,
+            pool_contribution_id: k.pool_contribution_id,
+            pool_request_id: k.pool_request_id,
+            goalName: k.goal?.name || 'Meta de ahorro'
+          };
+          console.log('Processing kambio:', kambio.id, 'type:', kambio.transaction_type);
+          return kambio;
+        });
       }
 
-      console.log('All kambios processed:', allKambios);
+      console.log('All kambios processed:', allKambios.length, 'kambios');
 
       // Sort by date (most recent first)
       allKambios.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       setKambios(allKambios);
 
-      // Calculate totals
-      const total = allKambios.reduce((sum, k) => sum + parseFloat(k.amount || 0), 0);
+      // Calculate totals (suma créditos, resta débitos)
+      const total = allKambios.reduce((sum, k) => {
+        const amount = parseFloat(k.amount || 0);
+        return k.transaction_type === 'debit' ? sum - amount : sum + amount;
+      }, 0);
       setTotalSaved(total);
       setTotalKambios(allKambios.length);
 
@@ -92,21 +108,30 @@ const HistoryScreen = ({ navigation }) => {
     }
   };
 
-  const renderKambioItem = ({ item }) => (
-    <View style={styles.kambioCard}>
-      <View style={styles.kambioIcon}>
-        <Text style={styles.kambioEmoji}>💪</Text>
-      </View>
-      <View style={styles.kambioInfo}>
-        <Text style={styles.kambioGoal}>{item.goalName}</Text>
-        <Text style={styles.kambioDescription}>
-          {item.description || 'Ahorro registrado'}
+  const renderKambioItem = ({ item }) => {
+    const isDebit = item.transaction_type === 'debit';
+
+    return (
+      <View style={styles.kambioCard}>
+        <View style={styles.kambioIcon}>
+          <Text style={styles.kambioEmoji}>{isDebit ? '🤝' : '💪'}</Text>
+        </View>
+        <View style={styles.kambioInfo}>
+          <Text style={styles.kambioGoal}>{item.goalName}</Text>
+          <Text style={styles.kambioDescription}>
+            {item.description || 'Ahorro registrado'}
+          </Text>
+          <Text style={styles.kambioDate}>{formatDate(item.created_at)}</Text>
+        </View>
+        <Text style={[
+          styles.kambioAmount,
+          isDebit ? styles.kambioAmountDebit : styles.kambioAmountCredit
+        ]}>
+          {isDebit ? '- ' : '+ '}{formatCurrency(parseFloat(item.amount))}
         </Text>
-        <Text style={styles.kambioDate}>{formatDate(item.created_at)}</Text>
       </View>
-      <Text style={styles.kambioAmount}>${parseFloat(item.amount).toFixed(2)}</Text>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -135,21 +160,32 @@ const HistoryScreen = ({ navigation }) => {
         }
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
+            {/* Header Card with gradient background */}
+            <View style={styles.headerCard}>
+              <Text style={styles.headerEmoji}>📊</Text>
               <Text style={styles.headerTitle}>Mi Kambio</Text>
+              <Text style={styles.headerSubtitle}>Registro de todos tus Kambios</Text>
             </View>
 
-            <View style={styles.statsContainer}>
-              <View style={styles.statBox}>
+            {/* Stats Card */}
+            <View style={styles.statsCard}>
+              <View style={styles.statItem}>
                 <Text style={styles.statValue}>{formatCurrency(totalSaved)}</Text>
                 <Text style={styles.statLabel}>Total ahorrado</Text>
               </View>
               <View style={styles.statDivider} />
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>{totalKambios}</Text>
-                <Text style={styles.statLabel}>Kambios{'\n'}realizados</Text>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>{totalKambios}</Text>
+                <Text style={styles.statLabel}>Kambios realizados</Text>
               </View>
             </View>
+
+            {/* Section Title */}
+            {kambios.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Últimos Kambios</Text>
+              </View>
+            )}
           </>
         }
         ListEmptyComponent={
@@ -167,110 +203,149 @@ const HistoryScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    padding: SPACING.xl,
-    paddingTop: SPACING.md,
-    backgroundColor: COLORS.surface
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  headerCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    margin: SPACING.md,
+    marginTop: SPACING.md,
+    alignItems: 'center',
+    ...SHADOWS.md
+  },
+  headerEmoji: {
+    fontSize: 48,
+    marginBottom: SPACING.sm
   },
   headerTitle: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: 'bold',
-    color: COLORS.text
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    margin: SPACING.xl,
-    marginTop: SPACING.lg,
-    padding: SPACING.lg,
-    paddingVertical: SPACING.xl,
-    borderRadius: BORDER_RADIUS.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  statBox: { 
-    flex: 1, 
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.xs
-  },
-  statValue: {
     fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
+    color: COLORS.textLight,
+    marginBottom: SPACING.xs
+  },
+  headerSubtitle: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textLight,
+    opacity: 0.9
+  },
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surface,
+    margin: SPACING.md,
+    marginTop: SPACING.sm,
+    padding: SPACING.md,
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  statValue: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
     color: COLORS.primary,
-    textAlign: 'center',
-    flexWrap: 'wrap',
-    maxWidth: '100%'
+    marginBottom: SPACING.xs
+  },
+  statNumber: {
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: SPACING.xs
   },
   statLabel: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: FONT_SIZES.xs,
     color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: FONT_SIZES.xs * 1.3
   },
   statDivider: {
     width: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.borderLight,
     marginHorizontal: SPACING.md
   },
-  listContainer: { paddingBottom: 80 },
+  sectionHeader: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.sm
+  },
+  sectionTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: 'bold',
+    color: COLORS.text
+  },
+  listContainer: {
+    paddingBottom: SPACING.xl
+  },
   kambioCard: {
-    marginHorizontal: SPACING.xl,
+    marginHorizontal: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    padding: SPACING.md,
+    padding: SPACING.sm,
+    paddingVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1
+    marginBottom: SPACING.sm,
+    ...SHADOWS.sm
   },
   kambioIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: BORDER_RADIUS.round,
-    backgroundColor: COLORS.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md
+    marginRight: SPACING.sm
   },
-  kambioEmoji: { fontSize: 24 },
-  kambioInfo: { flex: 1 },
+  kambioEmoji: {
+    fontSize: 32
+  },
+  kambioInfo: {
+    flex: 1
+  },
   kambioGoal: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 2
+    marginBottom: SPACING.xs / 2
   },
   kambioDescription: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginBottom: 2
+    marginBottom: SPACING.xs / 2
   },
   kambioDate: {
     fontSize: FONT_SIZES.xs,
     color: COLORS.textSecondary
   },
   kambioAmount: {
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.lg,
     fontWeight: 'bold',
+    color: COLORS.text
+  },
+  kambioAmountCredit: {
     color: COLORS.success
+  },
+  kambioAmountDebit: {
+    color: COLORS.error
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xxl
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl
   },
-  emptyEmoji: { fontSize: 80, marginBottom: SPACING.lg },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: SPACING.md
+  },
   emptyTitle: {
     fontSize: FONT_SIZES.xl,
     fontWeight: 'bold',
@@ -280,7 +355,8 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.textSecondary,
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: FONT_SIZES.md * 1.5
   }
 });
 

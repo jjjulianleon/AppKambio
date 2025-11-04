@@ -12,6 +12,7 @@ const kambioRoutes = require('./routes/kambios');
 const transactionRoutes = require('./routes/transactions');
 const expenseCategoryRoutes = require('./routes/expenseCategories');
 const nudgeRoutes = require('./routes/nudges');
+const poolRoutes = require('./routes/pools');
 
 // Create Express app
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/kambios', kambioRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/nudges', nudgeRoutes);
+app.use('/api/pools', poolRoutes);
 
 // 404 handler
 app.use((req, res) => {

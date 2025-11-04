@@ -46,12 +46,13 @@ const ProgressBar = ({ current, target, showLabels = true, height = 24 }) => {
             animatedStyle,
             { backgroundColor: isCompleted ? COLORS.success : COLORS.primary }
           ]}
-        />
-        <View style={styles.progressTextContainer}>
-          <Text style={styles.progressText}>
-            {formatPercentage(clampedProgress)}
-          </Text>
-        </View>
+        >
+          <View style={styles.whiteTextContainer}>
+            <Text style={styles.whiteText}>
+              {formatPercentage(clampedProgress)}
+            </Text>
+          </View>
+        </Animated.View>
       </View>
     </View>
   );
@@ -84,17 +85,18 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: BORDER_RADIUS.round
+    borderRadius: BORDER_RADIUS.round,
+    overflow: 'hidden'
   },
-  progressTextContainer: {
+  whiteTextContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  progressText: {
+  whiteText: {
     fontSize: FONT_SIZES.sm,
     fontWeight: 'bold',
-    color: COLORS.text
+    color: COLORS.textLight
   }
 });
 

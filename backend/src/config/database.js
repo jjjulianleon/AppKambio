@@ -1,7 +1,8 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
+const config = {
+  url: process.env.DATABASE_URL,
   dialect: 'postgres',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
@@ -10,7 +11,9 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     acquire: 30000,
     idle: 10000
   }
-});
+};
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, config);
 
 // Test connection
 const testConnection = async () => {
@@ -23,4 +26,11 @@ const testConnection = async () => {
   }
 };
 
-module.exports = { sequelize, testConnection };
+// Export for Sequelize CLI
+module.exports = {
+  development: config,
+  production: config,
+  test: config,
+  sequelize,
+  testConnection
+};

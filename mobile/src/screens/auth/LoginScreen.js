@@ -21,6 +21,7 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -55,7 +56,6 @@ const LoginScreen = ({ navigation }) => {
     setLoading(true);
     try {
       const response = await login(email, password);
-      console.log('Login successful:', response);
 
       // Navigate to Profile/Dashboard based on onboarding status
       navigation.reset({
@@ -63,10 +63,24 @@ const LoginScreen = ({ navigation }) => {
         routes: [{ name: 'MainTabs' }]
       });
     } catch (error) {
-      Alert.alert(
-        'Error de inicio de sesión',
-        error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.'
-      );
+      // Manejo de errores sin console.error para evitar mensajes rojos
+      let errorTitle = 'Error de inicio de sesión';
+      let errorMessage = 'No se pudo iniciar sesión. Por favor intenta nuevamente.';
+
+      if (error.message && error.message.includes('Email o contraseña incorrectos')) {
+        errorTitle = 'Credenciales incorrectas';
+        errorMessage = 'El email o la contraseña que ingresaste no son correctos. Por favor verifica e intenta de nuevo.';
+      } else if (error.message && error.message.includes('Network request failed')) {
+        errorTitle = 'Error de conexión';
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+      } else if (error.isNetworkError) {
+        errorTitle = 'Error de conexión';
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
     }
@@ -120,13 +134,20 @@ const LoginScreen = ({ navigation }) => {
                 <Text style={styles.label}>Contraseña</Text>
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, styles.inputWithIcon]}
                     placeholder="••••••••"
                     placeholderTextColor={COLORS.placeholder}
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                   />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -141,6 +162,14 @@ const LoginScreen = ({ navigation }) => {
                 ) : (
                   <Text style={styles.buttonText}>Iniciar Sesión</Text>
                 )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={() => navigation.navigate('ForgotPassword')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -222,6 +251,21 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontWeight: '500'
   },
+  inputWithIcon: {
+    paddingRight: SPACING.xl * 2
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: SPACING.lg,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm
+  },
+  eyeIcon: {
+    fontSize: 24
+  },
   button: {
     backgroundColor: COLORS.primary,
     paddingVertical: SPACING.lg,
@@ -238,6 +282,17 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
     color: COLORS.textLight
+  },
+  forgotPasswordButton: {
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center'
+  },
+  forgotPasswordText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline'
   },
   linkButton: {
     marginTop: SPACING.md,

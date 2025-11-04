@@ -41,6 +41,32 @@ const Kambio = sequelize.define('Kambio', {
       min: 0.01
     }
   },
+  transaction_type: {
+    type: DataTypes.ENUM('credit', 'debit'),
+    allowNull: false,
+    defaultValue: 'credit',
+    comment: 'credit = ahorro, debit = contribución al pozo'
+  },
+  pool_contribution_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'pool_contributions',
+      key: 'id'
+    },
+    onDelete: 'SET NULL',
+    comment: 'ID de la contribución al pozo si es un débito'
+  },
+  pool_request_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'pool_requests',
+      key: 'id'
+    },
+    onDelete: 'SET NULL',
+    comment: 'ID de la solicitud del pozo si es un crédito por solicitud completada'
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: true,

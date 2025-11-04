@@ -1,5 +1,6 @@
 const { User, FinancialProfile, NudgeSetting } = require('../models');
 const { generateToken } = require('../middleware/auth');
+const { addUserToDefaultPool } = require('../utils/poolInitializer');
 
 // Register new user
 exports.register = async (req, res, next) => {
@@ -35,6 +36,9 @@ exports.register = async (req, res, next) => {
     await NudgeSetting.create({
       user_id: user.id
     });
+
+    // Add user to default savings pool
+    await addUserToDefaultPool(user.id);
 
     // Generate token
     const token = generateToken(user.id);
@@ -156,6 +160,47 @@ exports.updateFinancialProfile = async (req, res, next) => {
     res.json({
       message: 'Perfil financiero actualizado exitosamente',
       profile
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reset password (simplified for testing - no email verification)
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, new_password } = req.body;
+
+    // Validate required fields
+    if (!email || !new_password) {
+      return res.status(400).json({
+        error: 'Email y nueva contraseña son obligatorios'
+      });
+    }
+
+    // Validate password length
+    if (new_password.length < 6) {
+      return res.status(400).json({
+        error: 'La contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({
+        error: 'No existe una cuenta con este email'
+      });
+    }
+
+    // Hash new password
+    const password_hash = await User.hashPassword(new_password);
+
+    // Update user password
+    await user.update({ password_hash });
+
+    res.json({
+      message: 'Contraseña actualizada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.'
     });
   } catch (error) {
     next(error);

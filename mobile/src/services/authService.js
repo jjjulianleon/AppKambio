@@ -41,7 +41,8 @@ export const login = async (email, password) => {
 
     return data;
   } catch (error) {
-    handleError(error);
+    // Re-throw error without console.error to avoid red messages
+    throw error;
   }
 };
 

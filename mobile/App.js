@@ -6,7 +6,8 @@ import { initializeNotifications } from './src/services/notificationService';
 
 // Ignore specific warnings
 LogBox.ignoreLogs([
-  'Non-serializable values were found in the navigation state'
+  'Non-serializable values were found in the navigation state',
+  'expo-notifications: Android Push notifications'
 ]);
 
 export default function App() {

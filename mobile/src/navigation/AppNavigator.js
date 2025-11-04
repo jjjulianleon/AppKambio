@@ -10,12 +10,14 @@ import { COLORS, ROUTES } from '../utils/constants';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import ProfileScreen from '../screens/onboarding/ProfileScreen';
 import TransactionsScreen from '../screens/onboarding/TransactionsScreen';
 import CategoryScreen from '../screens/onboarding/CategoryScreen';
 import CreateGoalScreen from '../screens/goal/CreateGoalScreen';
 import GoalDetailScreen from '../screens/goal/GoalDetailScreen';
 import KambioScreen from '../screens/kambio/KambioScreen';
+import CreateRequestScreen from '../screens/pool/CreateRequestScreen';
 import EditProfileScreen from '../screens/settings/EditProfileScreen';
 
 // Import tab navigator
@@ -57,12 +59,13 @@ const AppNavigator = () => {
   // Determine initial route based on auth status
   let initialRouteName = ROUTES.WELCOME;
 
-  if (userLoggedIn) {
-    if (onboardingComplete) {
-      initialRouteName = 'MainTabs';
-    } else {
-      initialRouteName = ROUTES.PROFILE;
-    }
+  // Solo si está logueado Y tiene onboarding completo, va al MainTabs
+  // Si está logueado pero sin onboarding, también va a Welcome (no debería pasar)
+  // Si no está logueado, siempre va a Welcome
+  if (userLoggedIn && onboardingComplete) {
+    initialRouteName = 'MainTabs';
+  } else {
+    initialRouteName = ROUTES.WELCOME;
   }
 
   return (
@@ -99,6 +102,14 @@ const AppNavigator = () => {
           options={{
             title: '',
             headerBackTitle: 'Inicio'
+          }}
+        />
+        <Stack.Screen
+          name="ForgotPassword"
+          component={ForgotPasswordScreen}
+          options={{
+            title: '',
+            headerBackTitle: 'Login'
           }}
         />
 
@@ -143,7 +154,18 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.KAMBIO}
           component={KambioScreen}
-          options={{ title: 'Registrar Kambio', presentation: 'modal' }}
+          options={{ 
+            headerShown: false,
+            presentation: 'modal'
+          }}
+        />
+        <Stack.Screen
+          name={ROUTES.CREATE_REQUEST}
+          component={CreateRequestScreen}
+          options={{ 
+            title: 'Solicitar Ayuda',
+            headerBackTitle: 'Pozo'
+          }}
         />
         <Stack.Screen
           name={ROUTES.EDIT_PROFILE}

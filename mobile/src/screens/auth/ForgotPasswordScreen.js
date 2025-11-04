@@ -13,16 +13,17 @@ import {
   Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
-import { register } from '../../services/authService';
-import { isValidEmail, validatePassword } from '../../utils/helpers';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '../../utils/constants';
+import { isValidEmail } from '../../utils/helpers';
+import api from '../../services/api';
 
-const RegisterScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
+const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -42,8 +43,9 @@ const RegisterScreen = ({ navigation }) => {
     ]).start();
   }, []);
 
-  const handleRegister = async () => {
-    if (!fullName || !email || !password) {
+  const handleResetPassword = async () => {
+    // Validations
+    if (!email || !newPassword || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
@@ -53,36 +55,51 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      Alert.alert('Error', passwordValidation.message);
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
     }
 
     setLoading(true);
     try {
-      await register(email, password, fullName);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: ROUTES.PROFILE }]
+      const response = await api.post('/auth/reset-password', {
+        email: email.toLowerCase().trim(),
+        new_password: newPassword
       });
+
+      Alert.alert(
+        '¡Contraseña actualizada!',
+        'Tu contraseña ha sido actualizada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.',
+        [
+          {
+            text: 'Ir a Login',
+            onPress: () => navigation.navigate('Login')
+          }
+        ]
+      );
     } catch (error) {
-      console.error('Register error:', error);
-      
-      // Manejo mejorado de errores
-      let errorTitle = 'Error de registro';
-      let errorMessage = 'No se pudo crear la cuenta. Por favor intenta nuevamente.';
-      
-      if (error.message && error.message.includes('ya existe')) {
-        errorTitle = 'Email ya registrado';
-        errorMessage = 'Este email ya está registrado. Por favor usa otro email o inicia sesión.';
-      } else if (error.message && error.message.includes('Network request failed')) {
-        errorTitle = 'Error de conexión';
-        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
-      } else if (error.message) {
+      // Manejo de errores sin console.error para evitar mensajes rojos
+      let errorTitle = 'Error';
+      let errorMessage = 'No se pudo actualizar la contraseña. Por favor intenta nuevamente.';
+
+      if (error.message) {
         errorMessage = error.message;
+
+        // Personalizar mensajes según el error
+        if (error.message.includes('No existe una cuenta con este email')) {
+          errorTitle = 'Email no encontrado';
+          errorMessage = 'No existe una cuenta registrada con este email. Por favor verifica e intenta de nuevo.';
+        } else if (error.message.includes('Network request failed') || error.isNetworkError) {
+          errorTitle = 'Error de conexión';
+          errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+        }
       }
-      
+
       Alert.alert(errorTitle, errorMessage);
     } finally {
       setLoading(false);
@@ -110,27 +127,13 @@ const RegisterScreen = ({ navigation }) => {
             ]}
           >
             <View style={styles.header}>
-              <Text style={styles.title}>Crea tu cuenta</Text>
+              <Text style={styles.title}>Restablecer contraseña</Text>
               <Text style={styles.subtitle}>
-                Empieza tu viaje hacia el ahorro inteligente
+                Ingresa tu email y tu nueva contraseña
               </Text>
             </View>
 
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nombre completo</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Juan Pérez"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                  />
-                </View>
-              </View>
-
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email</Text>
                 <View style={styles.inputContainer}>
@@ -148,14 +151,14 @@ const RegisterScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña</Text>
+                <Text style={styles.label}>Nueva contraseña</Text>
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={[styles.input, styles.inputWithIcon]}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="••••••••"
                     placeholderTextColor={COLORS.placeholder}
-                    value={password}
-                    onChangeText={setPassword}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
                     secureTextEntry={!showPassword}
                   />
                   <TouchableOpacity
@@ -168,26 +171,47 @@ const RegisterScreen = ({ navigation }) => {
                 </View>
               </View>
 
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Confirmar contraseña</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[styles.input, styles.inputWithIcon]}
+                    placeholder="••••••••"
+                    placeholderTextColor={COLORS.placeholder}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.eyeIcon}>{showConfirmPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               <TouchableOpacity
                 style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleRegister}
+                onPress={handleResetPassword}
                 disabled={loading}
                 activeOpacity={0.8}
               >
                 {loading ? (
                   <ActivityIndicator color={COLORS.textLight} />
                 ) : (
-                  <Text style={styles.buttonText}>Crear cuenta</Text>
+                  <Text style={styles.buttonText}>Actualizar contraseña</Text>
                 )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.linkButton}
-                onPress={() => navigation.navigate(ROUTES.LOGIN)}
+                onPress={() => navigation.goBack()}
                 activeOpacity={0.7}
               >
                 <Text style={styles.linkText}>
-                  ¿Ya tienes cuenta? <Text style={styles.linkTextBold}>Inicia sesión</Text>
+                  <Text style={styles.linkTextBold}>← Volver a Login</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -293,7 +317,7 @@ const styles = StyleSheet.create({
     color: COLORS.textLight
   },
   linkButton: {
-    marginTop: SPACING.md,
+    marginTop: SPACING.lg,
     paddingVertical: SPACING.sm,
     alignItems: 'center'
   },
@@ -308,4 +332,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default RegisterScreen;
+export default ForgotPasswordScreen;

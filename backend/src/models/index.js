@@ -6,6 +6,10 @@ const ExpenseCategory = require('./ExpenseCategory');
 const Transaction = require('./Transaction');
 const Kambio = require('./Kambio');
 const NudgeSetting = require('./NudgeSetting');
+const SavingsPool = require('./SavingsPool');
+const PoolMembership = require('./PoolMembership');
+const PoolRequest = require('./PoolRequest');
+const PoolContribution = require('./PoolContribution');
 
 // Define relationships
 // User relationships
@@ -30,14 +34,34 @@ Kambio.belongsTo(ExpenseCategory, { foreignKey: 'expense_category_id', as: 'expe
 Goal.hasMany(Kambio, { foreignKey: 'goal_id', as: 'kambios' });
 ExpenseCategory.hasMany(Kambio, { foreignKey: 'expense_category_id', as: 'kambios' });
 
-// Initialize database
+// Savings Pool relationships
+// Pool memberships
+SavingsPool.hasMany(PoolMembership, { foreignKey: 'pool_id', as: 'memberships' });
+PoolMembership.belongsTo(SavingsPool, { foreignKey: 'pool_id', as: 'pool' });
+User.hasMany(PoolMembership, { foreignKey: 'user_id', as: 'poolMemberships' });
+PoolMembership.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Pool requests
+SavingsPool.hasMany(PoolRequest, { foreignKey: 'pool_id', as: 'requests' });
+PoolRequest.belongsTo(SavingsPool, { foreignKey: 'pool_id', as: 'pool' });
+User.hasMany(PoolRequest, { foreignKey: 'requester_id', as: 'poolRequests' });
+PoolRequest.belongsTo(User, { foreignKey: 'requester_id', as: 'requester' });
+
+// Pool contributions
+PoolRequest.hasMany(PoolContribution, { foreignKey: 'request_id', as: 'contributions' });
+PoolContribution.belongsTo(PoolRequest, { foreignKey: 'request_id', as: 'request' });
+User.hasMany(PoolContribution, { foreignKey: 'contributor_id', as: 'poolContributions' });
+PoolContribution.belongsTo(User, { foreignKey: 'contributor_id', as: 'contributor' });
+
+// Initialize database 
 const initializeDatabase = async () => {
   try {
-    // Sync all models with database
-    await sequelize.sync({ alter: true });
-    console.log('✓ Database models synchronized successfully.');
+    // Solo verificar la conexión, no alterar tablas
+    // Las migraciones manejan los cambios de esquema
+    await sequelize.authenticate();
+    console.log('✓ Database connection established successfully.');
   } catch (error) {
-    console.error('✗ Error synchronizing database:', error.message);
+    console.error('✗ Error connecting to database:', error.message);
     throw error;
   }
 };
@@ -51,5 +75,9 @@ module.exports = {
   Transaction,
   Kambio,
   NudgeSetting,
+  SavingsPool,
+  PoolMembership,
+  PoolRequest,
+  PoolContribution,
   initializeDatabase
 };

@@ -3,6 +3,7 @@ const app = require('./app');
 const { testConnection } = require('./config/database');
 const { initializeDatabase } = require('./models');
 const { initializeNudgeScheduler } = require('./services/nudgeService');
+const { initializeDefaultPool } = require('./utils/poolInitializer');
 
 const PORT = process.env.PORT || 3000;
 
@@ -22,6 +23,10 @@ const startServer = async () => {
     // Initialize nudge scheduler
     console.log('⏰ Initializing nudge scheduler...');
     initializeNudgeScheduler();
+
+    // Initialize default savings pool
+    console.log('🤝 Initializing savings pool...');
+    await initializeDefaultPool();
 
     // Start Express server
     app.listen(PORT, () => {

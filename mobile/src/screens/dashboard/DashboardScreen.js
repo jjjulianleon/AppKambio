@@ -12,9 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
-import { getAllGoals, createKambio } from '../../services/goalService';
+import { getAllGoals, createKambio, getAllKambios } from '../../services/goalService';
 import { getStoredUser } from '../../services/authService';
-import { getGreeting } from '../../utils/helpers';
+import * as savingsPoolService from '../../services/savingsPoolService';
+import { getGreeting, formatCurrency } from '../../utils/helpers';
 import GoalCard from '../../components/GoalCard';
 import KambioButton from '../../components/KambioButton';
 
@@ -25,6 +26,8 @@ const DashboardScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [kambioLoading, setKambioLoading] = useState(false);
   const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [completedRequests, setCompletedRequests] = useState([]);
+  const [totalSaved, setTotalSaved] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -52,6 +55,52 @@ const DashboardScreen = ({ navigation }) => {
 
       const goalsResponse = await getAllGoals();
       setGoals(goalsResponse.goals || []);
+
+      // Cargar total ahorrado del mes
+      try {
+        const kambiosResponse = await getAllKambios();
+        const kambiosArray = kambiosResponse?.kambios || [];
+        
+        // Filtrar Kambios del mes actual
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        const monthlyKambios = kambiosArray.filter(k => {
+          const kambioDate = new Date(k.created_at);
+          return kambioDate.getMonth() === currentMonth && 
+                 kambioDate.getFullYear() === currentYear;
+        });
+        
+        // Calcular total (suma créditos, resta débitos)
+        const total = monthlyKambios.reduce((sum, k) => {
+          const amount = parseFloat(k.amount || 0);
+          return k.transaction_type === 'debit' ? sum - amount : sum + amount;
+        }, 0);
+        setTotalSaved(total);
+      } catch (kambioError) {
+        console.log('Kambios data not available:', kambioError);
+      }
+
+      // Cargar solicitudes completadas recientes del pozo
+      try {
+        const myRequests = await savingsPoolService.getMyRequests();
+        if (myRequests && myRequests.length > 0) {
+          // Filtrar solo las completadas en los últimos 7 días
+          const recentCompleted = myRequests.filter(req => {
+            if (req.status === 'completed') {
+              const completedDate = new Date(req.completedAt);
+              const daysDiff = (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
+              return daysDiff <= 7;
+            }
+            return false;
+          });
+          setCompletedRequests(recentCompleted);
+        }
+      } catch (poolError) {
+        // No mostrar error si falla la carga del pozo
+        console.log('Pool data not available:', poolError);
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -140,10 +189,38 @@ const DashboardScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={{ opacity: fadeAnim }}>
-          <View style={styles.header}>
+          {/* Header Card */}
+          <View style={styles.headerCard}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>{user?.full_name || 'Usuario'}</Text>
+            <View style={styles.monthlySavingsContainer}>
+              <Text style={styles.monthlySavingsLabel}>Este mes has ahorrado:</Text>
+              <Text style={styles.monthlySavingsAmount}>{formatCurrency(totalSaved)}</Text>
+            </View>
           </View>
+
+          {/* Notificación de solicitud completada */}
+          {completedRequests.length > 0 && (
+            <View style={styles.poolNotification}>
+              <View style={styles.poolNotificationHeader}>
+                <Text style={styles.poolNotificationEmoji}>🎉</Text>
+                <View style={styles.poolNotificationContent}>
+                  <Text style={styles.poolNotificationTitle}>
+                    ¡Tu solicitud fue completada!
+                  </Text>
+                  <Text style={styles.poolNotificationText}>
+                    Recibiste ${completedRequests[0].amount} del Pozo de Ahorro
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.poolNotificationButton}
+                onPress={() => navigation.navigate('SavingsPoolTab')}
+              >
+                <Text style={styles.poolNotificationButtonText}>Ver detalles</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {activeGoals.length === 0 ? (
             <View style={styles.emptyState}>
@@ -250,7 +327,7 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.backgroundLight
+    backgroundColor: COLORS.background
   },
   scrollView: {
     flex: 1
@@ -258,25 +335,50 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100
   },
-  header: {
-    paddingHorizontal: SPACING.xl,
+  headerCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingBottom: SPACING.lg,
+    margin: SPACING.md,
+    marginTop: SPACING.md,
+    ...SHADOWS.md
   },
   greeting: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
-    fontWeight: '500'
+    color: COLORS.textLight,
+    fontWeight: '500',
+    opacity: 0.9
   },
   userName: {
     fontSize: FONT_SIZES.xxxl,
     fontWeight: '800',
-    color: COLORS.text,
+    color: COLORS.textLight,
     marginTop: SPACING.xs,
     letterSpacing: -0.5
   },
+  monthlySavingsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    alignItems: 'center'
+  },
+  monthlySavingsLabel: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textLight,
+    opacity: 0.9,
+    marginBottom: SPACING.xs / 2
+  },
+  monthlySavingsAmount: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.textLight
+  },
   section: {
-    paddingHorizontal: SPACING.xl,
+    paddingHorizontal: SPACING.md,
     marginTop: SPACING.md
   },
   collapsibleHeader: {
@@ -321,25 +423,25 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.xxl * 1.5,
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xxl,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
     backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.xxl,
-    ...SHADOWS.md
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm
   },
   emptyIconContainer: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: BORDER_RADIUS.round,
-    backgroundColor: COLORS.primary + '15',
+    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.md
   },
   emptyEmoji: {
-    fontSize: 50
+    fontSize: 40
   },
   emptyTitle: {
     fontSize: FONT_SIZES.xxl,
@@ -368,7 +470,7 @@ const styles = StyleSheet.create({
     color: COLORS.textLight
   },
   kambioSection: {
-    paddingHorizontal: SPACING.xl,
+    paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.md,
     alignItems: 'center'
@@ -389,12 +491,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 2,
-    borderColor: COLORS.primary + '30',
+    borderColor: COLORS.primaryLight,
     ...SHADOWS.sm
+  },
+  poolNotification: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.success,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    ...SHADOWS.sm
+  },
+  poolNotificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.sm
+  },
+  poolNotificationEmoji: {
+    fontSize: FONT_SIZES.xxl,
+    marginRight: SPACING.sm
+  },
+  poolNotificationContent: {
+    flex: 1
+  },
+  poolNotificationTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: 'bold',
+    color: COLORS.textLight,
+    marginBottom: SPACING.xs / 2
+  },
+  poolNotificationText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textLight,
+    opacity: 0.95
+  },
+  poolNotificationButton: {
+    backgroundColor: COLORS.textLight,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
+    alignSelf: 'flex-start'
+  },
+  poolNotificationButtonText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.success
   }
 });
 

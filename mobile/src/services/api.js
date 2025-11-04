@@ -20,7 +20,7 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
-      console.error('Error getting token from storage:', error);
+      // Silent error - token might not exist yet (first time login)
     }
     return config;
   },
@@ -48,7 +48,7 @@ api.interceptors.response.use(
 
       return Promise.reject({
         status,
-        message: data.error || 'Error en el servidor',
+        message: data.message || data.error || 'Error en el servidor',
         details: data.details || null
       });
     } else if (error.request) {
@@ -75,9 +75,10 @@ export const handleResponse = (response) => {
 
 /**
  * Helper function to handle API errors
+ * Silent mode - no console.error to avoid red messages in console
  */
 export const handleError = (error) => {
-  console.error('API Error:', error);
+  // Just re-throw the error without logging to console
   throw error;
 };
 

@@ -6,6 +6,19 @@ exports.getAllKambios = async (req, res, next) => {
   try {
     const kambios = await Kambio.findAll({
       where: { user_id: req.userId },
+      attributes: [
+        'id',
+        'user_id',
+        'goal_id',
+        'expense_category_id',
+        'amount',
+        'transaction_type',
+        'pool_contribution_id',
+        'pool_request_id',
+        'description',
+        'created_at',
+        'updated_at'
+      ],
       include: [
         { model: Goal, as: 'goal' },
         { model: ExpenseCategory, as: 'expenseCategory' }

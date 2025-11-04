@@ -1,7 +1,9 @@
 // API Configuration
 // Usando localhost para modo tunnel de Expo (funciona desde WSL)
 export const API_URL = __DEV__
-  ? 'http://172.21.138.98:3000/api'  // Mantén tu IP, pero usa tunnel en Expo
+  ? 'http://192.168.5.158:3000/api'
+  // 192.168.0.102 ip casa
+  // 172.21.138.104 ip universidad
   : 'https://your-production-api.com/api';
 
 // Colors based on Kambio branding - Inspired by Diners Club design
@@ -170,6 +172,10 @@ export const ROUTES = {
   CREATE_GOAL: 'CreateGoal',
   GOAL_DETAIL: 'GoalDetail',
   KAMBIO: 'Kambio',
+
+  // Savings Pool
+  SAVINGS_POOL: 'SavingsPool',
+  CREATE_REQUEST: 'CreateRequest',
 
   // Settings
   SETTINGS: 'Settings',

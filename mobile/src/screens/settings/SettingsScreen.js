@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES } from '../../utils/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
 import { getStoredUser, logout } from '../../services/authService';
 
 const SettingsScreen = ({ navigation }) => {
@@ -75,12 +75,8 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Perfil</Text>
-        </View>
-
-        {/* User Info Card */}
-        <View style={styles.userCard}>
+        {/* Header Card with User Info */}
+        <View style={styles.headerCard}>
           {user?.profile_image ? (
             <Image source={{ uri: user.profile_image }} style={styles.avatarImage} />
           ) : (
@@ -160,96 +156,94 @@ const SettingsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContent: { paddingBottom: 80 },
-  header: {
-    padding: SPACING.xl,
-    paddingTop: SPACING.md,
-    backgroundColor: COLORS.surface
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
   },
-  headerTitle: {
-    fontSize: FONT_SIZES.xxxl,
-    fontWeight: 'bold',
-    color: COLORS.text
+  scrollContent: {
+    paddingBottom: 80
   },
-  userCard: {
+  headerCard: {
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    margin: SPACING.xl,
-    marginTop: SPACING.lg,
-    padding: SPACING.xl,
+    backgroundColor: COLORS.primary,
+    margin: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.lg,
+    paddingVertical: SPACING.xl,
     borderRadius: BORDER_RADIUS.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+    ...SHADOWS.md
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.textLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.md
+    marginBottom: SPACING.md,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)'
   },
   avatarImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.surface,
-    marginBottom: SPACING.md
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    marginBottom: SPACING.md,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)'
   },
   avatarText: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: COLORS.textLight
+    color: COLORS.primary
   },
   userName: {
-    fontSize: FONT_SIZES.xl,
+    fontSize: FONT_SIZES.xxl,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: COLORS.textLight,
     marginBottom: SPACING.xs
   },
   userEmail: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textLight,
+    opacity: 0.9
   },
   section: {
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.lg
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md
   },
   sectionTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
+    marginLeft: SPACING.xs,
     textTransform: 'uppercase',
-    letterSpacing: 0.5
+    letterSpacing: 1
   },
   settingsList: {
     backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.lg,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    ...SHADOWS.sm
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.md,
+    paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border
+    borderBottomColor: COLORS.borderLight
   },
   settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md
+    marginRight: SPACING.sm,
+    width: 44
   },
-  settingEmoji: { fontSize: 20 },
+  settingEmoji: {
+    fontSize: 32
+  },
   settingInfo: { flex: 1 },
   settingTitle: {
     fontSize: FONT_SIZES.md,

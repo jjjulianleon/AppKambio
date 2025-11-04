@@ -7,6 +7,7 @@ import { COLORS } from '../utils/constants';
 // Screens
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import HistoryScreen from '../screens/history/HistoryScreen';
+import SavingsPoolScreen from '../screens/pool/SavingsPoolScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
@@ -54,6 +55,16 @@ const MainTabNavigator = () => {
           tabBarLabel: 'Kambio',
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="📊" color={color} />
+          )
+        }}
+      />
+      <Tab.Screen
+        name="SavingsPoolTab"
+        component={SavingsPoolScreen}
+        options={{
+          tabBarLabel: 'Pozo',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon icon="🤝" color={color} />
           )
         }}
       />
