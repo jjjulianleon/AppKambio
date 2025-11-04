@@ -11,6 +11,11 @@ const PoolMembership = require('./PoolMembership');
 const PoolRequest = require('./PoolRequest');
 const PoolContribution = require('./PoolContribution');
 
+// Initialize Split Bill models
+const ExpenseShare = require('./ExpenseShare')(sequelize);
+const ExpenseShareMember = require('./ExpenseShareMember')(sequelize);
+const ExpenseShareItem = require('./ExpenseShareItem')(sequelize);
+
 // Define relationships
 // User relationships
 User.hasOne(FinancialProfile, { foreignKey: 'user_id', as: 'financialProfile' });
@@ -53,6 +58,19 @@ PoolContribution.belongsTo(PoolRequest, { foreignKey: 'request_id', as: 'request
 User.hasMany(PoolContribution, { foreignKey: 'contributor_id', as: 'poolContributions' });
 PoolContribution.belongsTo(User, { foreignKey: 'contributor_id', as: 'contributor' });
 
+// Expense Share relationships
+ExpenseShare.belongsTo(User, { foreignKey: 'user_id', as: 'creator' });
+User.hasMany(ExpenseShare, { foreignKey: 'user_id', as: 'expenseShares' });
+
+ExpenseShare.hasMany(ExpenseShareMember, { foreignKey: 'share_id', as: 'members' });
+ExpenseShareMember.belongsTo(ExpenseShare, { foreignKey: 'share_id', as: 'expenseShare' });
+ExpenseShareMember.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(ExpenseShareMember, { foreignKey: 'user_id', as: 'expenseShareMemberships' });
+
+ExpenseShare.hasMany(ExpenseShareItem, { foreignKey: 'share_id', as: 'items' });
+ExpenseShareItem.belongsTo(ExpenseShare, { foreignKey: 'share_id', as: 'expenseShare' });
+ExpenseShareItem.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignee' });
+
 // Initialize database 
 const initializeDatabase = async () => {
   try {
@@ -79,5 +97,8 @@ module.exports = {
   PoolMembership,
   PoolRequest,
   PoolContribution,
+  ExpenseShare,
+  ExpenseShareMember,
+  ExpenseShareItem,
   initializeDatabase
 };

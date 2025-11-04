@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 import { register } from '../../services/authService';
 import { isValidEmail, validatePassword } from '../../utils/helpers';
+import RocketAnimation from '../../components/RocketAnimation';
 
 const RegisterScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -23,6 +24,7 @@ const RegisterScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showRocketAnimation, setShowRocketAnimation] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -62,17 +64,23 @@ const RegisterScreen = ({ navigation }) => {
     setLoading(true);
     try {
       await register(email, password, fullName);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: ROUTES.PROFILE }]
-      });
+
+      // Show rocket animation on successful registration
+      setShowRocketAnimation(true);
+      setLoading(false);
+
+      // Wait for animation to complete before navigating
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: ROUTES.PROFILE }]
+        });
+      }, 2000);
     } catch (error) {
-      console.error('Register error:', error);
-      
-      // Manejo mejorado de errores
+      // Manejo mejorado de errores (sin console.error)
       let errorTitle = 'Error de registro';
       let errorMessage = 'No se pudo crear la cuenta. Por favor intenta nuevamente.';
-      
+
       if (error.message && error.message.includes('ya existe')) {
         errorTitle = 'Email ya registrado';
         errorMessage = 'Este email ya está registrado. Por favor usa otro email o inicia sesión.';
@@ -82,10 +90,10 @@ const RegisterScreen = ({ navigation }) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       Alert.alert(errorTitle, errorMessage);
-    } finally {
       setLoading(false);
+      setShowRocketAnimation(false);
     }
   };
 
@@ -194,6 +202,14 @@ const RegisterScreen = ({ navigation }) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Rocket Animation on Successful Registration */}
+      {showRocketAnimation && (
+        <RocketAnimation
+          duration={2000}
+          onAnimationComplete={() => setShowRocketAnimation(false)}
+        />
+      )}
     </SafeAreaView>
   );
 };

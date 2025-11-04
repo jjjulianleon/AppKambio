@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,29 @@ import {
   StatusBar,
   ScrollView,
   Animated,
-  Image
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSharedValue } from 'react-native-reanimated';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
+import LogoAnimated from '../../components/LogoAnimated';
+import ParallaxBackground from '../../components/ParallaxBackground';
+import { isBiometricAvailable, authenticate, getBiometricType, getBiometricTypeName } from '../../services/biometricService';
 
 const WelcomeScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scrollOffset = useSharedValue(0);
+
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricType, setBiometricType] = useState('unknown');
 
   useEffect(() => {
+    // Check biometric availability
+    checkBiometric();
+
+    // Start animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -29,15 +42,81 @@ const WelcomeScreen = ({ navigation }) => {
         useNativeDriver: true
       })
     ]).start();
+
+    // Pulse animation for biometric button
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true
+        })
+      ])
+    ).start();
   }, []);
+
+  const checkBiometric = async () => {
+    const available = await isBiometricAvailable();
+    setBiometricAvailable(available);
+
+    if (available) {
+      const type = await getBiometricType();
+      setBiometricType(type);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const result = await authenticate({
+      promptMessage: 'Autentícate para continuar',
+      cancelLabel: 'Cancelar',
+      fallbackLabel: 'Usar contraseña'
+    });
+
+    if (result.success) {
+      // Here you would check if user has previously logged in with biometrics
+      // For now, navigate to login screen
+      Alert.alert(
+        'Autenticación exitosa',
+        'Por favor ingresa con tu email y contraseña la primera vez para vincular tu biometría.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate(ROUTES.LOGIN)
+          }
+        ]
+      );
+    } else if (result.error && !result.error.includes('cancelled')) {
+      Alert.alert('Error', result.error);
+    }
+  };
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+    { useNativeDriver: false }
+  );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
+
+      {/* Parallax Background */}
+      <ParallaxBackground
+        scrollOffset={scrollOffset}
+        gradientStart={COLORS.primary}
+        gradientEnd={COLORS.secondary}
+      />
+
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
+        <Animated.ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         >
           <Animated.View
             style={[
@@ -50,11 +129,15 @@ const WelcomeScreen = ({ navigation }) => {
           >
             <View style={styles.mainContent}>
               <View style={styles.header}>
-                <Image
-                  source={require('../../../assets/images/logoKambio.jpg')}
-                  style={styles.logo}
-                  resizeMode="contain"
+                {/* Animated Logo */}
+                <LogoAnimated
+                  size={140}
+                  speed={3000}
+                  colors={{ primary: COLORS.textLight, secondary: COLORS.secondary }}
                 />
+
+                <Text style={styles.appName}>Kambio</Text>
+
                 <Text style={styles.subtitle}>
                   Transforma tus gastos hormiga{'\n'}en ahorro inteligente
                 </Text>
@@ -68,6 +151,24 @@ const WelcomeScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.actions}>
+              {/* Biometric Button - only show if available */}
+              {biometricAvailable && (
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                  <TouchableOpacity
+                    style={styles.biometricButton}
+                    activeOpacity={0.8}
+                    onPress={handleBiometricLogin}
+                  >
+                    <Text style={styles.biometricIcon}>
+                      {biometricType === 'faceID' ? '👤' : '👆'}
+                    </Text>
+                    <Text style={styles.biometricText}>
+                      {getBiometricTypeName(biometricType)}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
+
               <TouchableOpacity
                 style={styles.primaryButton}
                 activeOpacity={0.8}
@@ -85,7 +186,7 @@ const WelcomeScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </Animated.View>
-        </ScrollView>
+        </Animated.ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -94,7 +195,7 @@ const WelcomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.textLight
+    backgroundColor: COLORS.primary
   },
   safeArea: {
     flex: 1
@@ -117,18 +218,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xxl
   },
-  logo: {
-    width: 300,
-    height: 300,
-    marginBottom: SPACING.xl
+  appName: {
+    fontSize: FONT_SIZES.xxxl * 1.5,
+    fontWeight: '900',
+    color: COLORS.textLight,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
+    letterSpacing: 1
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.primary,
+    color: COLORS.textLight,
     textAlign: 'center',
     lineHeight: FONT_SIZES.lg * 1.5,
     paddingHorizontal: SPACING.md,
-    fontWeight: '600'
+    fontWeight: '600',
+    opacity: 0.9
   },
   callToAction: {
     paddingHorizontal: SPACING.xl,
@@ -137,16 +242,38 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: FONT_SIZES.xl,
-    color: COLORS.primary,
+    color: COLORS.textLight,
     textAlign: 'center',
     fontWeight: '700',
     lineHeight: FONT_SIZES.xl * 1.4
   },
   actions: {
-    paddingBottom: SPACING.xl
+    paddingBottom: SPACING.xl,
+    width: '100%'
+  },
+  biometricButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: BORDER_RADIUS.xxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.lg,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    flexDirection: 'row'
+  },
+  biometricIcon: {
+    fontSize: 28,
+    marginRight: SPACING.sm
+  },
+  biometricText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.textLight
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.textLight,
     paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
@@ -156,7 +283,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
-    color: COLORS.textLight
+    color: COLORS.primary
   },
   secondaryButton: {
     paddingVertical: SPACING.md,
@@ -165,7 +292,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.primary,
+    color: COLORS.textLight,
     fontWeight: '600'
   }
 });
