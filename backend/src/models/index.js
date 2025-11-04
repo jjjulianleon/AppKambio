@@ -16,6 +16,13 @@ const ExpenseShare = require('./ExpenseShare')(sequelize);
 const ExpenseShareMember = require('./ExpenseShareMember')(sequelize);
 const ExpenseShareItem = require('./ExpenseShareItem')(sequelize);
 
+// Initialize Battle Pass models
+const BattlePass = require('./BattlePass')(sequelize);
+const BattlePassReward = require('./BattlePassReward')(sequelize);
+const UserReward = require('./UserReward')(sequelize);
+const BattlePassChallenge = require('./BattlePassChallenge')(sequelize);
+const UserChallenge = require('./UserChallenge')(sequelize);
+
 // Define relationships
 // User relationships
 User.hasOne(FinancialProfile, { foreignKey: 'user_id', as: 'financialProfile' });
@@ -71,6 +78,24 @@ ExpenseShare.hasMany(ExpenseShareItem, { foreignKey: 'share_id', as: 'items' });
 ExpenseShareItem.belongsTo(ExpenseShare, { foreignKey: 'share_id', as: 'expenseShare' });
 ExpenseShareItem.belongsTo(User, { foreignKey: 'assigned_to', as: 'assignee' });
 
+// Battle Pass relationships
+BattlePass.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(BattlePass, { foreignKey: 'user_id', as: 'battlePasses' });
+
+BattlePassReward.hasMany(UserReward, { foreignKey: 'reward_id', as: 'userRewards' });
+
+UserReward.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+UserReward.belongsTo(BattlePass, { foreignKey: 'battle_pass_id', as: 'battlePass' });
+UserReward.belongsTo(BattlePassReward, { foreignKey: 'reward_id', as: 'reward' });
+User.hasMany(UserReward, { foreignKey: 'user_id', as: 'userRewards' });
+BattlePass.hasMany(UserReward, { foreignKey: 'battle_pass_id', as: 'rewards' });
+
+BattlePassChallenge.hasMany(UserChallenge, { foreignKey: 'challenge_id', as: 'userChallenges' });
+
+UserChallenge.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+UserChallenge.belongsTo(BattlePassChallenge, { foreignKey: 'challenge_id', as: 'challenge' });
+User.hasMany(UserChallenge, { foreignKey: 'user_id', as: 'userChallenges' });
+
 // Initialize database 
 const initializeDatabase = async () => {
   try {
@@ -100,5 +125,10 @@ module.exports = {
   ExpenseShare,
   ExpenseShareMember,
   ExpenseShareItem,
+  BattlePass,
+  BattlePassReward,
+  UserReward,
+  BattlePassChallenge,
+  UserChallenge,
   initializeDatabase
 };
