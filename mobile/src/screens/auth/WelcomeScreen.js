@@ -10,7 +10,6 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSharedValue } from 'react-native-reanimated';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 import LogoAnimated from '../../components/LogoAnimated';
 import ParallaxBackground from '../../components/ParallaxBackground';
@@ -20,7 +19,6 @@ const WelcomeScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const scrollOffset = useSharedValue(0);
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState('unknown');
@@ -95,28 +93,20 @@ const WelcomeScreen = ({ navigation }) => {
     }
   };
 
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-    { useNativeDriver: false }
-  );
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       {/* Parallax Background */}
       <ParallaxBackground
-        scrollOffset={scrollOffset}
         gradientStart={COLORS.primary}
         gradientEnd={COLORS.secondary}
       />
 
       <SafeAreaView style={styles.safeArea}>
-        <Animated.ScrollView
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
         >
           <Animated.View
             style={[

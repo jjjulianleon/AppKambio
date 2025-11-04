@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Polygon } from 'react-native-svg';
 import Animated, {
   useSharedValue,
-  useAnimatedProps,
+  useAnimatedStyle,
   withRepeat,
   withTiming,
   Easing
 } from 'react-native-reanimated';
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 const LogoAnimated = ({ size = 120, speed = 3000, colors = { primary: '#6B4CE6', secondary: '#00D9FF' } }) => {
   const rotation = useSharedValue(0);
@@ -25,76 +25,54 @@ const LogoAnimated = ({ size = 120, speed = 3000, colors = { primary: '#6B4CE6',
     );
   }, [speed]);
 
-  // Create arrow path - pointing upward triangle
-  const createArrowPath = (angle) => {
-    const centerX = size / 2;
-    const centerY = size / 2;
-    const radius = size * 0.35;
-    const arrowWidth = size * 0.08;
-    const arrowHeight = size * 0.25;
-
-    // Calculate position on circle
-    const rad = (angle * Math.PI) / 180;
-    const x = centerX + radius * Math.cos(rad - Math.PI / 2);
-    const y = centerY + radius * Math.sin(rad - Math.PI / 2);
-
-    // Arrow pointing outward
-    const tipX = centerX + (radius + arrowHeight) * Math.cos(rad - Math.PI / 2);
-    const tipY = centerY + (radius + arrowHeight) * Math.sin(rad - Math.PI / 2);
-
-    // Calculate perpendicular for arrow base
-    const perpAngle = rad;
-    const baseLeftX = x + arrowWidth * Math.cos(perpAngle);
-    const baseLeftY = y + arrowWidth * Math.sin(perpAngle);
-    const baseRightX = x - arrowWidth * Math.cos(perpAngle);
-    const baseRightY = y - arrowWidth * Math.sin(perpAngle);
-
-    return `M ${baseLeftX} ${baseLeftY} L ${tipX} ${tipY} L ${baseRightX} ${baseRightY} Z`;
-  };
-
-  const animatedProps1 = useAnimatedProps(() => {
+  const animatedStyle = useAnimatedStyle(() => {
     return {
-      d: createArrowPath(rotation.value)
+      transform: [{ rotate: `${rotation.value}deg` }]
     };
   });
 
-  const animatedProps2 = useAnimatedProps(() => {
-    return {
-      d: createArrowPath(rotation.value + 120)
-    };
-  });
-
-  const animatedProps3 = useAnimatedProps(() => {
-    return {
-      d: createArrowPath(rotation.value + 240)
-    };
-  });
+  // Simple triangle points for arrows
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const radius = size * 0.35;
+  const arrowSize = size * 0.12;
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Center circle */}
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={size * 0.15}
-          fill={colors.primary}
-        />
+      <View style={styles.centerCircleContainer}>
+        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Center circle */}
+          <Circle
+            cx={centerX}
+            cy={centerY}
+            r={size * 0.15}
+            fill={colors.primary}
+          />
+        </Svg>
+      </View>
 
-        {/* Three rotating arrows */}
-        <AnimatedPath
-          animatedProps={animatedProps1}
-          fill={colors.primary}
-        />
-        <AnimatedPath
-          animatedProps={animatedProps2}
-          fill={colors.secondary}
-        />
-        <AnimatedPath
-          animatedProps={animatedProps3}
-          fill={colors.primary}
-        />
-      </Svg>
+      {/* Rotating arrows */}
+      <AnimatedView style={[styles.arrowsContainer, animatedStyle]}>
+        <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={styles.arrowSvg}>
+          {/* Arrow 1 - pointing up */}
+          <Polygon
+            points={`${centerX},${centerY - radius - arrowSize} ${centerX - arrowSize / 2},${centerY - radius} ${centerX + arrowSize / 2},${centerY - radius}`}
+            fill={colors.primary}
+          />
+
+          {/* Arrow 2 - pointing 120 degrees */}
+          <Polygon
+            points={`${centerX + (radius + arrowSize) * Math.cos(Math.PI / 6)},${centerY + (radius + arrowSize) * Math.sin(Math.PI / 6)} ${centerX + radius * Math.cos(Math.PI / 6) - arrowSize / 4},${centerY + radius * Math.sin(Math.PI / 6) + arrowSize / 2} ${centerX + radius * Math.cos(Math.PI / 6) + arrowSize / 4},${centerY + radius * Math.sin(Math.PI / 6) - arrowSize / 2}`}
+            fill={colors.secondary}
+          />
+
+          {/* Arrow 3 - pointing 240 degrees */}
+          <Polygon
+            points={`${centerX + (radius + arrowSize) * Math.cos(7 * Math.PI / 6)},${centerY + (radius + arrowSize) * Math.sin(7 * Math.PI / 6)} ${centerX + radius * Math.cos(7 * Math.PI / 6) - arrowSize / 4},${centerY + radius * Math.sin(7 * Math.PI / 6) - arrowSize / 2} ${centerX + radius * Math.cos(7 * Math.PI / 6) + arrowSize / 4},${centerY + radius * Math.sin(7 * Math.PI / 6) + arrowSize / 2}`}
+            fill={colors.primary}
+          />
+        </Svg>
+      </AnimatedView>
     </View>
   );
 };
@@ -102,7 +80,31 @@ const LogoAnimated = ({ size = 120, speed = 3000, colors = { primary: '#6B4CE6',
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    position: 'relative'
+  },
+  centerCircleContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2
+  },
+  arrowsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1
+  },
+  arrowSvg: {
+    position: 'absolute'
   }
 });
 
