@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
-import { getAllGoals, createKambio, getAllKambios } from '../../services/goalService';
+import { getAllGoals, getAllKambios } from '../../services/goalService';
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';

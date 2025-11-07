@@ -24,6 +24,9 @@
       "permissions": [
         "NOTIFICATIONS"
       ]
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

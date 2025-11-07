@@ -19,6 +19,8 @@ import GoalDetailScreen from '../screens/goal/GoalDetailScreen';
 import KambioScreen from '../screens/kambio/KambioScreen';
 import CreateRequestScreen from '../screens/pool/CreateRequestScreen';
 import EditProfileScreen from '../screens/settings/EditProfileScreen';
+import RewardDetailScreen from '../screens/rewards/RewardDetailScreen';
+import BattlePassHistoryScreen from '../screens/rewards/BattlePassHistoryScreen';
 
 // Import tab navigator
 import MainTabNavigator from './MainTabNavigator';
@@ -170,9 +172,25 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.EDIT_PROFILE}
           component={EditProfileScreen}
-          options={{ 
+          options={{
             title: 'Editar Perfil',
             headerBackTitle: 'Perfil'
+          }}
+        />
+        <Stack.Screen
+          name="RewardDetail"
+          component={RewardDetailScreen}
+          options={{
+            title: 'Recompensa',
+            headerBackTitle: 'Battle Pass'
+          }}
+        />
+        <Stack.Screen
+          name="BattlePassHistory"
+          component={BattlePassHistoryScreen}
+          options={{ 
+            title: 'Historial',
+            headerBackTitle: 'Battle Pass'
           }}
         />
       </Stack.Navigator>

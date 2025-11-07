@@ -7,6 +7,7 @@ import { COLORS } from '../utils/constants';
 // Screens
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import HistoryScreen from '../screens/history/HistoryScreen';
+import BattlePassScreen from '../screens/rewards/BattlePassScreen';
 import SavingsPoolScreen from '../screens/pool/SavingsPoolScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 
@@ -55,6 +56,16 @@ const MainTabNavigator = () => {
           tabBarLabel: 'Kambio',
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="📊" color={color} />
+          )
+        }}
+      />
+      <Tab.Screen
+        name="BattlePassTab"
+        component={BattlePassScreen}
+        options={{
+          tabBarLabel: 'Recompensas',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon icon="🏆" color={color} />
           )
         }}
       />

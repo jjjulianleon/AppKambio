@@ -54,6 +54,11 @@ export const logout = async () => {
     await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
     await AsyncStorage.removeItem(STORAGE_KEYS.USER);
     await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+
+    // NOTE: For debugging/development, we keep biometric credentials saved
+    // so users can quickly re-login with Face ID
+    // In production, you may want to clear credentials for security on shared devices
+    // await clearSavedCredentials();
   } catch (error) {
     console.error('Error logging out:', error);
   }

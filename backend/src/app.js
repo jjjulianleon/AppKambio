@@ -14,6 +14,7 @@ const expenseCategoryRoutes = require('./routes/expenseCategories');
 const nudgeRoutes = require('./routes/nudges');
 const poolRoutes = require('./routes/pools');
 const splitRoutes = require('./routes/splits');
+const battlePassRoutes = require('./routes/battlePass');
 
 // Create Express app
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/nudges', nudgeRoutes);
 app.use('/api/pools', poolRoutes);
 app.use('/api/splits', splitRoutes);
+app.use('/api/battle-pass', battlePassRoutes);
 
 // 404 handler
 app.use((req, res) => {

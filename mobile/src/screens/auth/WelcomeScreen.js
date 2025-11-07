@@ -14,6 +14,8 @@ import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../
 import LogoAnimated from '../../components/LogoAnimated';
 import ParallaxBackground from '../../components/ParallaxBackground';
 import { isBiometricAvailable, authenticate, getBiometricType, getBiometricTypeName } from '../../services/biometricService';
+import { getSavedCredentials, isBiometricSetup } from '../../services/secureCredentialService';
+import { login } from '../../services/authService';
 
 const WelcomeScreen = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -22,6 +24,7 @@ const WelcomeScreen = ({ navigation }) => {
 
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState('unknown');
+  const [biometricSetup, setBiometricSetup] = useState(false);
 
   useEffect(() => {
     // Check biometric availability
@@ -60,7 +63,10 @@ const WelcomeScreen = ({ navigation }) => {
 
   const checkBiometric = async () => {
     const available = await isBiometricAvailable();
+    const setup = await isBiometricSetup();
+
     setBiometricAvailable(available);
+    setBiometricSetup(setup);
 
     if (available) {
       const type = await getBiometricType();
@@ -69,18 +75,11 @@ const WelcomeScreen = ({ navigation }) => {
   };
 
   const handleBiometricLogin = async () => {
-    const result = await authenticate({
-      promptMessage: 'Autentícate para continuar',
-      cancelLabel: 'Cancelar',
-      fallbackLabel: 'Usar contraseña'
-    });
-
-    if (result.success) {
-      // Here you would check if user has previously logged in with biometrics
-      // For now, navigate to login screen
+    // Check if biometric is set up
+    if (!biometricSetup) {
       Alert.alert(
-        'Autenticación exitosa',
-        'Por favor ingresa con tu email y contraseña la primera vez para vincular tu biometría.',
+        'Configuración requerida',
+        'Por favor inicia sesión con tu email y contraseña la primera vez para habilitar la autenticación biométrica.',
         [
           {
             text: 'OK',
@@ -88,6 +87,56 @@ const WelcomeScreen = ({ navigation }) => {
           }
         ]
       );
+      return;
+    }
+
+    // Authenticate with biometric
+    const result = await authenticate({
+      promptMessage: 'Autentícate para continuar',
+      cancelLabel: 'Cancelar',
+      fallbackLabel: 'Usar contraseña'
+    });
+
+    if (result.success) {
+      // Get saved credentials
+      const credentials = await getSavedCredentials();
+
+      if (!credentials) {
+        Alert.alert(
+          'Error',
+          'No se pudieron recuperar las credenciales guardadas. Por favor inicia sesión manualmente.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate(ROUTES.LOGIN)
+            }
+          ]
+        );
+        return;
+      }
+
+      // Login with saved credentials
+      try {
+        await login(credentials.email, credentials.password);
+
+        // Navigate to main app
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }]
+        });
+      } catch (error) {
+        // If login fails, ask user to login manually
+        Alert.alert(
+          'Error de inicio de sesión',
+          'No se pudo iniciar sesión con las credenciales guardadas. Por favor inicia sesión manualmente.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate(ROUTES.LOGIN)
+            }
+          ]
+        );
+      }
     } else if (result.error && !result.error.includes('cancelled')) {
       Alert.alert('Error', result.error);
     }
@@ -176,7 +225,7 @@ const WelcomeScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </Animated.View>
-        </Animated.ScrollView>
+        </ScrollView>
       </SafeAreaView>
     </View>
   );

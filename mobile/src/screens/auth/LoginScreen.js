@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 import { login } from '../../services/authService';
 import { isValidEmail } from '../../utils/helpers';
+import { isBiometricAvailable, getBiometricType, getBiometricTypeName } from '../../services/biometricService';
+import { saveCredentialsForBiometric, isBiometricSetup } from '../../services/secureCredentialService';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -57,11 +59,62 @@ const LoginScreen = ({ navigation }) => {
     try {
       const response = await login(email, password);
 
-      // Navigate to Profile/Dashboard based on onboarding status
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainTabs' }]
-      });
+      // Check if we should prompt for biometric setup
+      const biometricAvailable = await isBiometricAvailable();
+      const biometricAlreadySetup = await isBiometricSetup();
+
+      if (biometricAvailable && !biometricAlreadySetup) {
+        // Prompt user to enable biometric authentication
+        const biometricType = await getBiometricType();
+        const biometricName = getBiometricTypeName(biometricType);
+
+        Alert.alert(
+          'Habilitar autenticación biométrica',
+          `¿Deseas usar ${biometricName} para iniciar sesión más rápido la próxima vez?`,
+          [
+            {
+              text: 'Ahora no',
+              style: 'cancel',
+              onPress: () => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'MainTabs' }]
+                });
+              }
+            },
+            {
+              text: 'Sí, habilitar',
+              onPress: async () => {
+                // Save credentials securely
+                const saved = await saveCredentialsForBiometric(email, password);
+                if (saved) {
+                  Alert.alert(
+                    '¡Listo!',
+                    `${biometricName} habilitado. La próxima vez podrás iniciar sesión con tu ${biometricName}.`
+                  );
+                }
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'MainTabs' }]
+                });
+              }
+            }
+          ]
+        );
+      } else if (biometricAvailable && biometricAlreadySetup) {
+        // Update credentials for existing biometric user
+        await saveCredentialsForBiometric(email, password);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }]
+        });
+      } else {
+        // Navigate to Profile/Dashboard based on onboarding status
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }]
+        });
+      }
     } catch (error) {
       // Manejo de errores sin console.error para evitar mensajes rojos
       let errorTitle = 'Error de inicio de sesión';

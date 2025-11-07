@@ -1,4 +1,4 @@
-const { Kambio, Goal, ExpenseCategory } = require('../models');
+const { Kambio, Goal, ExpenseCategory, BattlePass } = require('../models');
 const { sequelize } = require('../config/database');
 
 // Get all user kambios
@@ -115,6 +115,56 @@ exports.createKambio = async (req, res, next) => {
 
     await goal.save({ transaction });
 
+    // Update Battle Pass with the savings
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    let battlePass = await BattlePass.findOne({
+      where: {
+        user_id: req.userId,
+        month: currentMonth,
+        year: currentYear
+      }
+    });
+
+    // Create battle pass if doesn't exist for current month
+    if (!battlePass) {
+      battlePass = await BattlePass.create({
+        user_id: req.userId,
+        month: currentMonth,
+        year: currentYear,
+        total_savings: 0,
+        current_level: 0
+      }, { transaction });
+    }
+
+    // Update battle pass savings and level
+    const newBattlePassSavings = parseFloat(battlePass.total_savings) + parseFloat(amount);
+    battlePass.total_savings = newBattlePassSavings;
+
+    // Define level thresholds
+    const levels = [
+      { level: 7, min: 300 },
+      { level: 6, min: 200 },
+      { level: 5, min: 150 },
+      { level: 4, min: 100 },
+      { level: 3, min: 75 },
+      { level: 2, min: 50 },
+      { level: 1, min: 25 },
+      { level: 0, min: 0 }
+    ];
+
+    // Calculate new level
+    for (const levelInfo of levels) {
+      if (newBattlePassSavings >= levelInfo.min) {
+        battlePass.current_level = levelInfo.level;
+        break;
+      }
+    }
+
+    await battlePass.save({ transaction });
+
     await transaction.commit();
 
     // Fetch complete kambio with relationships
@@ -132,6 +182,10 @@ exports.createKambio = async (req, res, next) => {
         current_amount: goal.current_amount,
         progress: goal.getProgress(),
         is_completed: goal.isCompleted()
+      },
+      battle_pass_updated: {
+        total_savings: battlePass.total_savings,
+        current_level: battlePass.current_level
       }
     });
   } catch (error) {
@@ -169,6 +223,47 @@ exports.deleteKambio = async (req, res, next) => {
     }
 
     await goal.save({ transaction });
+
+    // Update Battle Pass (subtract the savings)
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    const battlePass = await BattlePass.findOne({
+      where: {
+        user_id: req.userId,
+        month: currentMonth,
+        year: currentYear
+      }
+    });
+
+    if (battlePass) {
+      // Subtract the amount
+      const newBattlePassSavings = Math.max(0, parseFloat(battlePass.total_savings) - parseFloat(kambio.amount));
+      battlePass.total_savings = newBattlePassSavings;
+
+      // Recalculate level
+      const levels = [
+        { level: 7, min: 300 },
+        { level: 6, min: 200 },
+        { level: 5, min: 150 },
+        { level: 4, min: 100 },
+        { level: 3, min: 75 },
+        { level: 2, min: 50 },
+        { level: 1, min: 25 },
+        { level: 0, min: 0 }
+      ];
+
+      for (const levelInfo of levels) {
+        if (newBattlePassSavings >= levelInfo.min) {
+          battlePass.current_level = levelInfo.level;
+          break;
+        }
+      }
+
+      await battlePass.save({ transaction });
+    }
+
     await kambio.destroy({ transaction });
 
     await transaction.commit();
