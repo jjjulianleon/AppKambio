@@ -21,7 +21,9 @@
       "Bash(ipconfig:*)",
       "Bash(curl -v http://172.21.138.33:3000/api)",
       "Bash(cmd //c taskkill //PID 8268 //F)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(cmd //c taskkill //PID 10308 //F)",
+      "Bash(timeout /t 2)"
     ],
     "deny": [],
     "ask": []

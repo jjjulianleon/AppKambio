@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  RefreshControl, ActivityIndicator
+  RefreshControl, ActivityIndicator, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../../utils/constants';
-import { getAllKambios } from '../../services/goalService';
+import { getKambiosWithMonthlySummary } from '../../services/goalService';
 import { formatCurrency } from '../../utils/helpers';
 
 const HistoryScreen = ({ navigation }) => {
+  const [displayMode, setDisplayMode] = useState('all'); // 'all' or specific month 'YYYY-MM'
   const [kambios, setKambios] = useState([]);
+  const [monthlySummary, setMonthlySummary] = useState([]);
+  const [totalHistorical, setTotalHistorical] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [totalSaved, setTotalSaved] = useState(0);
-  const [totalKambios, setTotalKambios] = useState(0);
 
   useEffect(() => {
     loadHistory();
@@ -28,56 +29,44 @@ const HistoryScreen = ({ navigation }) => {
 
   const loadHistory = async () => {
     try {
-      const kambiosResponse = await getAllKambios();
+      const data = await getKambiosWithMonthlySummary();
 
-      console.log('Kambios response received:', kambiosResponse);
+      console.log('Data with monthly summary:', {
+        totalHistorical: data.totalHistorical,
+        monthlySummaryCount: data.monthlySummary.length,
+        allKambiosCount: data.allKambios.length
+      });
 
-      // Extract kambios array from response (structure: { kambios: [...] })
-      const kambiosArray = kambiosResponse?.kambios || [];
-      console.log('Kambios array:', kambiosArray);
-
-      // Map kambios and include goal name if available
-      let allKambios = [];
-      if (Array.isArray(kambiosArray) && kambiosArray.length > 0) {
-        allKambios = kambiosArray.map(k => {
-          const kambio = {
-            id: k.id || Math.random(),
-            amount: k.amount,
-            transaction_type: k.transaction_type || 'credit', // Default to credit if not specified
-            description: k.description,
-            created_at: k.created_at,
-            updated_at: k.updated_at,
-            goal_id: k.goal_id,
-            user_id: k.user_id,
-            expense_category_id: k.expense_category_id,
-            pool_contribution_id: k.pool_contribution_id,
-            pool_request_id: k.pool_request_id,
-            goalName: k.goal?.name || 'Meta de ahorro'
-          };
-          console.log('Processing kambio:', kambio.id, 'type:', kambio.transaction_type);
-          return kambio;
-        });
+      // Process all kambios to include goal name
+      let processedKambios = [];
+      if (Array.isArray(data.allKambios) && data.allKambios.length > 0) {
+        processedKambios = data.allKambios.map(k => ({
+          id: k.id || Math.random(),
+          amount: k.amount,
+          transaction_type: k.transaction_type || 'credit',
+          description: k.description,
+          created_at: k.created_at,
+          updated_at: k.updated_at,
+          goal_id: k.goal_id,
+          user_id: k.user_id,
+          expense_category_id: k.expense_category_id,
+          pool_contribution_id: k.pool_contribution_id,
+          pool_request_id: k.pool_request_id,
+          goalName: k.goal?.name || 'Meta de ahorro'
+        }));
       }
 
-      console.log('All kambios processed:', allKambios.length, 'kambios');
-
       // Sort by date (most recent first)
-      allKambios.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      processedKambios.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-      setKambios(allKambios);
+      setKambios(processedKambios);
+      setMonthlySummary(data.monthlySummary);
+      setTotalHistorical(data.totalHistorical);
+      setDisplayMode('all');
 
-      // Calculate totals (suma créditos, resta débitos)
-      const total = allKambios.reduce((sum, k) => {
-        const amount = parseFloat(k.amount || 0);
-        return k.transaction_type === 'debit' ? sum - amount : sum + amount;
-      }, 0);
-      setTotalSaved(total);
-      setTotalKambios(allKambios.length);
-
-      console.log('History loaded - Total:', total, 'Count:', allKambios.length);
+      console.log('History loaded - Total Historical:', data.totalHistorical);
     } catch (error) {
       console.error('Error loading history:', error);
-      console.error('Full error:', JSON.stringify(error, null, 2));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,23 +78,50 @@ const HistoryScreen = ({ navigation }) => {
     loadHistory();
   };
 
+  // Get kambios to display based on selected month
+  const getDisplayedKambios = () => {
+    if (displayMode === 'all') {
+      return kambios;
+    }
+    // Filter by selected month
+    return kambios.filter(k => {
+      const kambioMonth = new Date(k.created_at).toISOString().slice(0, 7);
+      return kambioMonth === displayMode;
+    });
+  };
+
+  // Get total for displayed kambios
+  const getDisplayedTotal = () => {
+    if (displayMode === 'all') {
+      return totalHistorical;
+    }
+    const monthData = monthlySummary.find(m => m.month === displayMode);
+    return monthData ? monthData.total : 0;
+  };
+
+  const formatMonthLabel = (monthString) => {
+    const [year, month] = monthString.split('-');
+    const date = new Date(year, parseInt(month) - 1);
+    return date.toLocaleDateString('es-EC', { month: 'long', year: 'numeric' });
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return 'Hoy';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Ayer';
-    } else {
-      return date.toLocaleDateString('es-EC', {
-        day: 'numeric',
-        month: 'short',
-        year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-      });
-    }
+    // Format with complete date and time
+    const dateStr = date.toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    const timeStr = date.toLocaleTimeString('es-EC', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    return `${dateStr} ${timeStr}`;
   };
 
   const renderKambioItem = ({ item }) => {
@@ -143,16 +159,19 @@ const HistoryScreen = ({ navigation }) => {
     );
   }
 
+  const displayedKambios = getDisplayedKambios();
+  const displayedTotal = getDisplayedTotal();
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={kambios}
+        data={displayedKambios}
         renderItem={renderKambioItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContainer}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={handleRefresh}
             tintColor={COLORS.primary}
             colors={[COLORS.primary]}
@@ -170,20 +189,72 @@ const HistoryScreen = ({ navigation }) => {
             {/* Stats Card */}
             <View style={styles.statsCard}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{formatCurrency(totalSaved)}</Text>
-                <Text style={styles.statLabel}>Total ahorrado</Text>
+                <Text style={styles.statValue}>{formatCurrency(displayedTotal)}</Text>
+                <Text style={styles.statLabel}>
+                  {displayMode === 'all' ? 'Total histórico' : 'Total en ' + formatMonthLabel(displayMode)}
+                </Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{totalKambios}</Text>
-                <Text style={styles.statLabel}>Kambios realizados</Text>
+                <Text style={styles.statNumber}>{displayedKambios.length}</Text>
+                <Text style={styles.statLabel}>Kambios</Text>
               </View>
             </View>
 
+            {/* Filter Section - Monthly Selection */}
+            {monthlySummary.length > 0 && (
+              <View style={styles.filterSection}>
+                <Text style={styles.filterTitle}>Ver por período</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.filterScroll}
+                  contentContainerStyle={styles.filterContent}
+                >
+                  {/* All time button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.filterButton,
+                      displayMode === 'all' && styles.filterButtonActive
+                    ]}
+                    onPress={() => setDisplayMode('all')}
+                  >
+                    <Text style={[
+                      styles.filterButtonText,
+                      displayMode === 'all' && styles.filterButtonTextActive
+                    ]}>
+                      📈 Todo
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Monthly buttons */}
+                  {monthlySummary.map((monthData) => (
+                    <TouchableOpacity
+                      key={monthData.month}
+                      style={[
+                        styles.filterButton,
+                        displayMode === monthData.month && styles.filterButtonActive
+                      ]}
+                      onPress={() => setDisplayMode(monthData.month)}
+                    >
+                      <Text style={[
+                        styles.filterButtonText,
+                        displayMode === monthData.month && styles.filterButtonTextActive
+                      ]}>
+                        {formatMonthLabel(monthData.month).charAt(0).toUpperCase() + formatMonthLabel(monthData.month).slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             {/* Section Title */}
-            {kambios.length > 0 && (
+            {displayedKambios.length > 0 && (
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Últimos Kambios</Text>
+                <Text style={styles.sectionTitle}>
+                  {displayMode === 'all' ? 'Todos los Kambios' : 'Kambios de ' + formatMonthLabel(displayMode)}
+                </Text>
               </View>
             )}
           </>
@@ -191,9 +262,14 @@ const HistoryScreen = ({ navigation }) => {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>📊</Text>
-            <Text style={styles.emptyTitle}>Sin historial aún</Text>
+            <Text style={styles.emptyTitle}>
+              {displayMode === 'all' ? 'Sin historial aún' : 'Sin Kambios en este mes'}
+            </Text>
             <Text style={styles.emptyText}>
-              Tus Kambios registrados aparecerán aquí
+              {displayMode === 'all'
+                ? 'Tus Kambios registrados aparecerán aquí'
+                : 'No hay registros de ahorro para este período'
+              }
             </Text>
           </View>
         }
@@ -273,6 +349,58 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: COLORS.borderLight,
     marginHorizontal: SPACING.md
+  },
+  filterSection: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md
+  },
+  filterTitle: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm
+  },
+  filterScroll: {
+    marginHorizontal: -SPACING.sm
+  },
+  filterContent: {
+    paddingHorizontal: SPACING.sm,
+    gap: SPACING.sm
+  },
+  filterButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.round,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginRight: SPACING.sm,
+    minWidth: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.xs
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary
+  },
+  filterButtonText: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.text
+  },
+  filterButtonTextActive: {
+    color: COLORS.textLight
+  },
+  filterButtonAmount: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs / 2
+  },
+  filterButtonAmountActive: {
+    color: COLORS.textLight
   },
   sectionHeader: {
     paddingHorizontal: SPACING.md,

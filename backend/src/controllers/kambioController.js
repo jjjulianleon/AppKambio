@@ -116,15 +116,14 @@ exports.createKambio = async (req, res, next) => {
     await goal.save({ transaction });
 
     // Update Battle Pass with the savings
+    // Create a date representing the first day of the current month (YYYY-MM-01)
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+    const monthKey = currentDate.toISOString().split('T')[0].slice(0, 7) + '-01'; // Format: YYYY-MM-01
 
     let battlePass = await BattlePass.findOne({
       where: {
         user_id: req.userId,
-        month: currentMonth,
-        year: currentYear
+        month: monthKey
       }
     });
 
@@ -132,10 +131,12 @@ exports.createKambio = async (req, res, next) => {
     if (!battlePass) {
       battlePass = await BattlePass.create({
         user_id: req.userId,
-        month: currentMonth,
-        year: currentYear,
+        month: monthKey,
         total_savings: 0,
-        current_level: 0
+        current_level: 0,
+        total_points: 0,
+        completed_challenges: [],
+        streak_days: 0
       }, { transaction });
     }
 
@@ -225,15 +226,14 @@ exports.deleteKambio = async (req, res, next) => {
     await goal.save({ transaction });
 
     // Update Battle Pass (subtract the savings)
+    // Create a date representing the first day of the current month (YYYY-MM-01)
     const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+    const monthKey = currentDate.toISOString().split('T')[0].slice(0, 7) + '-01'; // Format: YYYY-MM-01
 
     const battlePass = await BattlePass.findOne({
       where: {
         user_id: req.userId,
-        month: currentMonth,
-        year: currentYear
+        month: monthKey
       }
     });
 

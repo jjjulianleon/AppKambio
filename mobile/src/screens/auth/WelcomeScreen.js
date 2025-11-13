@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
 import LogoAnimated from '../../components/LogoAnimated';
 import ParallaxBackground from '../../components/ParallaxBackground';
@@ -27,10 +28,7 @@ const WelcomeScreen = ({ navigation }) => {
   const [biometricSetup, setBiometricSetup] = useState(false);
 
   useEffect(() => {
-    // Check biometric availability
-    checkBiometric();
-
-    // Start animations
+    // Start animations on mount
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -60,6 +58,13 @@ const WelcomeScreen = ({ navigation }) => {
       ])
     ).start();
   }, []);
+
+  // Check biometric setup every time screen is focused (important for after logout)
+  useFocusEffect(
+    useCallback(() => {
+      checkBiometric();
+    }, [])
+  );
 
   const checkBiometric = async () => {
     const available = await isBiometricAvailable();

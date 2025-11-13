@@ -131,3 +131,75 @@ export const getKambioStats = async () => {
     handleError(error);
   }
 };
+
+/**
+ * Get kambios with monthly summaries
+ * Aggregates kambios by month and returns both individual kambios and monthly totals
+ */
+export const getKambiosWithMonthlySummary = async () => {
+  try {
+    const kambios = await getAllKambios();
+
+    if (!kambios || !Array.isArray(kambios.kambios)) {
+      return {
+        allKambios: [],
+        monthlySummary: [],
+        totalHistorical: 0,
+        currentMonthTotal: 0,
+      };
+    }
+
+    // Aggregate by month
+    const monthlyMap = {};
+    let totalHistorical = 0;
+
+    kambios.kambios.forEach((kambio) => {
+      const date = new Date(kambio.created_at);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+      const amount = parseFloat(kambio.amount) || 0;
+
+      totalHistorical += amount;
+
+      if (!monthlyMap[monthKey]) {
+        monthlyMap[monthKey] = {
+          month: monthKey,
+          total: 0,
+          count: 0,
+          kambios: [],
+        };
+      }
+
+      monthlyMap[monthKey].total += amount;
+      monthlyMap[monthKey].count += 1;
+      monthlyMap[monthKey].kambios.push(kambio);
+    });
+
+    // Convert to sorted array (newest first)
+    const monthlySummary = Object.values(monthlyMap)
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .map((summary) => ({
+        ...summary,
+        total: parseFloat(summary.total.toFixed(2)),
+      }));
+
+    // Get current month
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const currentMonthData = monthlyMap[currentMonth];
+    const currentMonthTotal = currentMonthData ? currentMonthData.total : 0;
+
+    return {
+      allKambios: kambios.kambios,
+      monthlySummary,
+      totalHistorical: parseFloat(totalHistorical.toFixed(2)),
+      currentMonthTotal: parseFloat(currentMonthTotal.toFixed(2)),
+    };
+  } catch (error) {
+    handleError(error);
+    return {
+      allKambios: [],
+      monthlySummary: [],
+      totalHistorical: 0,
+      currentMonthTotal: 0,
+    };
+  }
+};

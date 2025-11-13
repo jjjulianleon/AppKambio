@@ -34,13 +34,26 @@ const BattlePassScreen = ({ navigation }) => {
 
       // Load current battle pass
       const currentResponse = await api.get('/battle-pass/current');
-      setBattlePass(currentResponse.data.battlePass);
+      const bp = currentResponse.data.battlePass;
+      setBattlePass(bp);
       setNextLevel(currentResponse.data.nextLevel);
       setProgressPercentage(currentResponse.data.progressPercentage);
 
       // Load all rewards
       const rewardsResponse = await api.get('/battle-pass/rewards');
-      setRewards(rewardsResponse.data.rewards);
+      const rewardsList = rewardsResponse.data.rewards;
+      setRewards(rewardsList);
+
+      // Debug logging
+      console.log('=== Battle Pass Debug ===');
+      console.log('Total Savings:', bp?.total_savings);
+      console.log('Current Level:', bp?.current_level);
+      console.log('Rewards loaded:', rewardsList?.length);
+      console.log('Reward levels and unlock status:');
+      rewardsList?.forEach(reward => {
+        const isUnlocked = bp && bp.total_savings >= reward.min_savings;
+        console.log(`  Level ${reward.level}: min_savings=$${reward.min_savings}, unlocked=${isUnlocked}`);
+      });
 
       // Load active challenges
       const challengesResponse = await api.get('/battle-pass/challenges');
@@ -70,7 +83,9 @@ const BattlePassScreen = ({ navigation }) => {
   };
 
   const handleRewardPress = (reward) => {
-    const isUnlocked = battlePass && battlePass.total_savings >= reward.min_savings;
+    const totalSavings = parseFloat(battlePass?.total_savings || 0);
+    const minSavings = parseFloat(reward.min_savings || 0);
+    const isUnlocked = totalSavings >= minSavings;
     navigation.navigate('RewardDetail', { reward, isUnlocked });
   };
 
@@ -154,13 +169,22 @@ const BattlePassScreen = ({ navigation }) => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>🏆 Recompensas</Text>
             <Text style={styles.sectionSubtitle}>
-              {rewards.filter(r => battlePass && battlePass.total_savings >= r.min_savings).length} de {rewards.length} desbloqueadas
+              {rewards.filter(r => {
+                const totalSavings = parseFloat(battlePass?.total_savings || 0);
+                const minSavings = parseFloat(r.min_savings || 0);
+                return totalSavings >= minSavings;
+              }).length} de {rewards.length} desbloqueadas
             </Text>
           </View>
-          
+
           <View style={styles.rewardsGrid}>
-            {rewards.map((reward) => {
-              const isUnlocked = battlePass && battlePass.total_savings >= reward.min_savings;
+            {rewards.sort((a, b) => a.level - b.level).map((reward) => {
+              // A reward is unlocked if total savings >= its minimum requirement
+              // Ensure numeric comparison by parsing both values
+              const totalSavings = parseFloat(battlePass?.total_savings || 0);
+              const minSavings = parseFloat(reward.min_savings || 0);
+              const isUnlocked = totalSavings >= minSavings;
+
               return (
                 <RewardCard
                   key={reward.id}

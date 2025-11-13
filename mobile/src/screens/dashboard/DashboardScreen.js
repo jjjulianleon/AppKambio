@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
-import { getAllGoals, getAllKambios } from '../../services/goalService';
+import { getAllGoals, getKambiosWithMonthlySummary } from '../../services/goalService';
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';
@@ -58,28 +58,12 @@ const DashboardScreen = ({ navigation }) => {
 
       // Cargar total ahorrado del mes
       try {
-        const kambiosResponse = await getAllKambios();
-        const kambiosArray = kambiosResponse?.kambios || [];
-        
-        // Filtrar Kambios del mes actual
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        
-        const monthlyKambios = kambiosArray.filter(k => {
-          const kambioDate = new Date(k.created_at);
-          return kambioDate.getMonth() === currentMonth && 
-                 kambioDate.getFullYear() === currentYear;
-        });
-        
-        // Calcular total (suma créditos, resta débitos)
-        const total = monthlyKambios.reduce((sum, k) => {
-          const amount = parseFloat(k.amount || 0);
-          return k.transaction_type === 'debit' ? sum - amount : sum + amount;
-        }, 0);
-        setTotalSaved(total);
+        const monthlySummaryData = await getKambiosWithMonthlySummary();
+        setTotalSaved(monthlySummaryData.currentMonthTotal);
+        console.log('Current month total:', monthlySummaryData.currentMonthTotal);
       } catch (kambioError) {
         console.log('Kambios data not available:', kambioError);
+        setTotalSaved(0);
       }
 
       // Cargar solicitudes completadas recientes del pozo
