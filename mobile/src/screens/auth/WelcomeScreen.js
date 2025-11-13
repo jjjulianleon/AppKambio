@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   biometricButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: COLORS.glassLight,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.xxl,
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.lg,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: COLORS.glassLight,
     flexDirection: 'row'
   },
   biometricIcon: {

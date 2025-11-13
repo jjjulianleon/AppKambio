@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/helpers';
+import { logger } from '../../utils/logger';
 import api from '../../services/api';
 import ProgressRing from '../../components/ProgressRing';
 import RewardCard from '../../components/RewardCard';
@@ -44,15 +45,16 @@ const BattlePassScreen = ({ navigation }) => {
       const rewardsList = rewardsResponse.data.rewards;
       setRewards(rewardsList);
 
-      // Debug logging
-      console.log('=== Battle Pass Debug ===');
-      console.log('Total Savings:', bp?.total_savings);
-      console.log('Current Level:', bp?.current_level);
-      console.log('Rewards loaded:', rewardsList?.length);
-      console.log('Reward levels and unlock status:');
-      rewardsList?.forEach(reward => {
-        const isUnlocked = bp && bp.total_savings >= reward.min_savings;
-        console.log(`  Level ${reward.level}: min_savings=$${reward.min_savings}, unlocked=${isUnlocked}`);
+      // Debug logging (only in development)
+      logger.group('Battle Pass Debug', () => {
+        logger.debug('Total Savings:', bp?.total_savings);
+        logger.debug('Current Level:', bp?.current_level);
+        logger.debug('Rewards loaded:', rewardsList?.length);
+        logger.debug('Reward levels and unlock status:');
+        rewardsList?.forEach(reward => {
+          const isUnlocked = bp && parseFloat(bp.total_savings) >= parseFloat(reward.min_savings);
+          logger.debug(`  Level ${reward.level}: min_savings=$${reward.min_savings}, unlocked=${isUnlocked}`);
+        });
       });
 
       // Load active challenges
@@ -60,7 +62,7 @@ const BattlePassScreen = ({ navigation }) => {
       setChallenges(challengesResponse.data.challenges);
 
     } catch (error) {
-      console.error('Error loading battle pass:', error);
+      logger.error('Error loading battle pass:', error);
       Alert.alert('Error', 'No se pudo cargar el Battle Pass');
     } finally {
       setLoading(false);

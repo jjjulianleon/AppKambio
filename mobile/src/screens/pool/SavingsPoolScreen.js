@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/helpers';
+import { logger } from '../../utils/logger';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getStoredUser } from '../../services/authService';
 
@@ -83,7 +84,7 @@ const SavingsPoolScreen = ({ navigation }) => {
         setUserSavings(0);
       }
     } catch (error) {
-      console.error('Error al cargar datos del pozo:', error);
+      logger.error('Error al cargar datos del pozo:', error);
       // Usar datos mock en caso de error
       setPoolMembers(mockPoolMembers);
       setActiveRequests(mockActiveRequests);
@@ -162,7 +163,7 @@ const SavingsPoolScreen = ({ navigation }) => {
                           // Recargar datos
                           await loadPoolData();
                         } catch (error) {
-                          console.error('Error al contribuir:', error);
+                          logger.error('Error al contribuir:', error);
                           Alert.alert('Error', error.message || 'No se pudo completar la contribución');
                         }
                       }
@@ -170,7 +171,7 @@ const SavingsPoolScreen = ({ navigation }) => {
                   ]
                 );
               } catch (error) {
-                console.error('Error procesando contribución:', error);
+                logger.error('Error procesando contribución:', error);
                 Alert.alert('Error', 'Monto inválido');
               }
             }
@@ -180,7 +181,7 @@ const SavingsPoolScreen = ({ navigation }) => {
         suggestedAmount.toFixed(2)
       );
     } catch (error) {
-      console.error('Error al calcular contribución:', error);
+      logger.error('Error al calcular contribución:', error);
       Alert.alert('Error', 'No se pudo calcular la contribución');
     }
   };
@@ -200,7 +201,7 @@ const SavingsPoolScreen = ({ navigation }) => {
               Alert.alert('¡Solicitud Borrada!', 'La solicitud ha sido borrada y los fondos han sido reembolsados.');
               await loadPoolData();
             } catch (error) {
-              console.error('Error al borrar solicitud:', error);
+              logger.error('Error al borrar solicitud:', error);
               Alert.alert('Error', error.message || 'No se pudo borrar la solicitud');
             }
           }
@@ -226,8 +227,11 @@ const SavingsPoolScreen = ({ navigation }) => {
   );
 
   const renderRequestCard = (request, isCompleted = false) => {
-    const progress = isCompleted ? 100 : (request.currentAmount / request.amount) * 100;
-    const remaining = request.amount - request.currentAmount;
+    // Validación para prevenir división por cero
+    const amount = parseFloat(request.amount) || 1;
+    const currentAmount = parseFloat(request.currentAmount) || 0;
+    const progress = isCompleted ? 100 : Math.min(100, (currentAmount / amount) * 100);
+    const remaining = Math.max(0, amount - currentAmount);
     const isOwnRequest = request.requesterId === userId;
 
     return (

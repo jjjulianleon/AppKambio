@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { getAllGoals, getKambiosWithMonthlySummary } from '../../services/goalSe
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';
+import { logger } from '../../utils/logger';
 import GoalCard from '../../components/GoalCard';
 import KambioButton from '../../components/KambioButton';
 
@@ -59,10 +60,10 @@ const DashboardScreen = ({ navigation }) => {
       // Cargar total ahorrado del mes
       try {
         const monthlySummaryData = await getKambiosWithMonthlySummary();
-        setTotalSaved(monthlySummaryData.currentMonthTotal);
-        console.log('Current month total:', monthlySummaryData.currentMonthTotal);
+        setTotalSaved(monthlySummaryData.currentMonthTotal || 0);
+        logger.info('Current month total:', monthlySummaryData.currentMonthTotal);
       } catch (kambioError) {
-        console.log('Kambios data not available:', kambioError);
+        logger.debug('Kambios data not available:', kambioError);
         setTotalSaved(0);
       }
 
@@ -83,10 +84,10 @@ const DashboardScreen = ({ navigation }) => {
         }
       } catch (poolError) {
         // No mostrar error si falla la carga del pozo
-        console.log('Pool data not available:', poolError);
+        logger.debug('Pool data not available:', poolError);
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      logger.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -98,7 +99,18 @@ const DashboardScreen = ({ navigation }) => {
     loadData();
   };
 
-  const handleKambio = async () => {
+  // Memoize filtered goals to prevent recalculation on every render
+  const activeGoals = useMemo(() =>
+    goals.filter(g => g.status === 'active'),
+    [goals]
+  );
+
+  const completedGoals = useMemo(() =>
+    goals.filter(g => g.status === 'completed'),
+    [goals]
+  );
+
+  const handleKambio = useCallback(async () => {
     if (activeGoals.length === 0) {
       Alert.alert('Sin meta activa', 'Por favor crea una meta primero', [
         { text: 'Crear meta', onPress: () => navigation.navigate(ROUTES.CREATE_GOAL) },
@@ -127,10 +139,7 @@ const DashboardScreen = ({ navigation }) => {
       // Si solo hay una meta, ir directo
       navigation.navigate(ROUTES.KAMBIO, { goal: activeGoals[0] });
     }
-  };
-
-  const activeGoals = goals.filter(g => g.status === 'active');
-  const completedGoals = goals.filter(g => g.status === 'completed');
+  }, [activeGoals, navigation]);
 
   const toggleCompleted = () => {
     const willExpand = !completedExpanded;
@@ -343,12 +352,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5
   },
   monthlySavingsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.glassLight,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     marginTop: SPACING.md,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.glassLight
   },
   monthlySavingsLabel: {
     fontSize: FONT_SIZES.xs,
@@ -446,7 +457,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xxl,
     borderRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.md
+    ...SHADOWS.colored
   },
   createButtonText: {
     fontSize: FONT_SIZES.lg,
@@ -474,13 +485,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     borderWidth: 2,
-    borderColor: COLORS.primaryLight,
-    ...SHADOWS.sm
+    borderColor: COLORS.primary200,
+    ...SHADOWS.md
   },
   poolNotification: {
     marginHorizontal: SPACING.md,

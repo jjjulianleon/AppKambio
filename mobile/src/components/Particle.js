@@ -7,6 +7,7 @@ import Animated, {
   withDelay,
   Easing
 } from 'react-native-reanimated';
+import { COLORS } from '../utils/constants';
 
 const Particle = ({ delay = 0, startX = 0, startY = 0, endY = -100, duration = 800 }) => {
   const translateY = useSharedValue(0);
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF6B35'
+    backgroundColor: COLORS.confetti.orange // Use centralized color
   }
 });
 

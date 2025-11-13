@@ -7,8 +7,17 @@ import Animated, {
   withDelay,
   Easing
 } from 'react-native-reanimated';
+import { COLORS } from '../utils/constants';
 
-const CONFETTI_COLORS = ['#FFD700', '#FF6B9D', '#4CAF50', '#00D9FF', '#FF9AA2', '#FFB84D'];
+// Use confetti colors from centralized constants
+const CONFETTI_COLORS = [
+  COLORS.confetti.gold,
+  COLORS.confetti.pink,
+  COLORS.confetti.green,
+  COLORS.confetti.cyan,
+  COLORS.confetti.coral,
+  COLORS.confetti.orange
+];
 
 const Confetti = ({ delay = 0, startX = 0, startY = 0, screenHeight = 800 }) => {
   const translateY = useSharedValue(0);

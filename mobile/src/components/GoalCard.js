@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '../utils/constants';
 import { formatCurrency, calculateProgress } from '../utils/helpers';
+import { haptics } from '../utils/haptics';
 import ProgressBar from './ProgressBar';
 
 const GoalCard = ({ goal, onPress }) => {
@@ -11,6 +12,7 @@ const GoalCard = ({ goal, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
+    haptics.light(); // Haptic feedback on press
     Animated.spring(scaleAnim, {
       toValue: 0.98,
       useNativeDriver: true,
@@ -95,11 +97,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.xl,
     marginBottom: SPACING.lg,
     overflow: 'hidden',
-    ...SHADOWS.md
+    ...SHADOWS.lg // Enhanced shadow for better depth
   },
   cardCompleted: {
     borderWidth: 2,
-    borderColor: COLORS.success
+    borderColor: COLORS.success,
+    ...SHADOWS.coloredSuccess // Colored shadow for completed goals
   },
   imageContainer: {
     width: '100%',
