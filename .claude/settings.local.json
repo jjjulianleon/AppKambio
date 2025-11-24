@@ -23,7 +23,9 @@
       "Bash(cmd //c taskkill //PID 8268 //F)",
       "Bash(curl:*)",
       "Bash(cmd //c taskkill //PID 10308 //F)",
-      "Bash(timeout /t 2)"
+      "Bash(timeout /t 2)",
+      "Bash(git pull:*)",
+      "Bash(timeout /t 5)"
     ],
     "deny": [],
     "ask": []

@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.xl
+    paddingBottom: 100
   },
   headerCard: {
     backgroundColor: COLORS.primary,

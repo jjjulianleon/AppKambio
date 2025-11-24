@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     color: COLORS.text
   },
   listContainer: {
-    paddingBottom: SPACING.xl
+    paddingBottom: 100
   },
   kambioCard: {
     marginHorizontal: SPACING.md,

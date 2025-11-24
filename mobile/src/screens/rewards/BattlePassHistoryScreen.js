@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   bottomPadding: {
-    height: SPACING.xl
+    height: 100
   }
 });
 

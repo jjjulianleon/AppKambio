@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.md
+    paddingBottom: 100
   },
   balanceCard: {
     backgroundColor: COLORS.primary,

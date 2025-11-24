@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     color: COLORS.text
   },
   bottomPadding: {
-    height: SPACING.xl
+    height: 100
   }
 });
 

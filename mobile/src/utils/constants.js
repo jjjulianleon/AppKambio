@@ -1,9 +1,9 @@
 // API Configuration
 // Usando localhost para modo tunnel de Expo (funciona desde WSL)
 export const API_URL = __DEV__
-  ? 'http://172.21.138.33:3000/api'
+  ? 'http://172.21.138.188:3000/api'
   // 192.168.0.102 ip casa
-  // 172.21.138.33 ip universidad
+  // 172.21.138.188 ip universidad (actualizada)
   : 'https://your-production-api.com/api';
 
 // Colors based on Kambio branding - Inspired by Diners Club design

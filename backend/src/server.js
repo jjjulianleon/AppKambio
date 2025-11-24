@@ -29,9 +29,10 @@ const startServer = async () => {
     await initializeDefaultPool();
 
     // Start Express server
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n✅ Server is running on port ${PORT}`);
       console.log(`📍 API URL: http://localhost:${PORT}`);
+      console.log(`📱 Mobile URL: http://172.21.138.188:${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
       console.log(`\n🎯 Kambio API ready to receive requests!\n`);
     });
