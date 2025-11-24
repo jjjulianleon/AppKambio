@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Circle, Polygon } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,11 +31,60 @@ const LogoAnimated = ({ size = 120, speed = 3000, colors = { primary: '#6B4CE6',
     };
   });
 
-  // Simple triangle points for arrows
   const centerX = size / 2;
   const centerY = size / 2;
   const radius = size * 0.35;
-  const arrowSize = size * 0.12;
+  const arrowArcLength = Math.PI / 6; // Length of arrow along the arc (30 degrees)
+  const arrowHeadSize = size * 0.08;
+  const lineWidth = size * 0.025;
+
+  // Helper function to create curved arrow following the circle
+  const createCurvedArrowPath = (startAngle) => {
+    // Arrow follows the circle tangentially (clockwise direction)
+    const endAngle = startAngle + arrowArcLength;
+
+    // Inner and outer radius for the arrow body
+    const innerRadius = radius - lineWidth / 2;
+    const outerRadius = radius + lineWidth / 2;
+
+    // Start points of the arrow body (curved line)
+    const startInnerX = centerX + innerRadius * Math.cos(startAngle);
+    const startInnerY = centerY + innerRadius * Math.sin(startAngle);
+    const startOuterX = centerX + outerRadius * Math.cos(startAngle);
+    const startOuterY = centerY + outerRadius * Math.sin(startAngle);
+
+    // End points before arrow head
+    const endInnerX = centerX + innerRadius * Math.cos(endAngle);
+    const endInnerY = centerY + innerRadius * Math.sin(endAngle);
+    const endOuterX = centerX + outerRadius * Math.cos(endAngle);
+    const endOuterY = centerY + outerRadius * Math.sin(endAngle);
+
+    // Arrow head tip (pointing in the direction of motion)
+    const tipAngle = endAngle + arrowHeadSize / radius;
+    const tipX = centerX + radius * Math.cos(tipAngle);
+    const tipY = centerY + radius * Math.sin(tipAngle);
+
+    // Arrow head wings
+    const wingInnerX = centerX + (radius - arrowHeadSize * 0.7) * Math.cos(endAngle);
+    const wingInnerY = centerY + (radius - arrowHeadSize * 0.7) * Math.sin(endAngle);
+    const wingOuterX = centerX + (radius + arrowHeadSize * 0.7) * Math.cos(endAngle);
+    const wingOuterY = centerY + (radius + arrowHeadSize * 0.7) * Math.sin(endAngle);
+
+    // Use arc commands to create smooth curves
+    const largeArcFlag = 0; // 0 for arcs < 180 degrees
+    const sweepFlag = 1; // 1 for clockwise
+
+    return `
+      M ${startOuterX} ${startOuterY}
+      A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} ${sweepFlag} ${endOuterX} ${endOuterY}
+      L ${wingOuterX} ${wingOuterY}
+      L ${tipX} ${tipY}
+      L ${wingInnerX} ${wingInnerY}
+      L ${endInnerX} ${endInnerY}
+      A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startInnerX} ${startInnerY}
+      Z
+    `;
+  };
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -51,24 +100,24 @@ const LogoAnimated = ({ size = 120, speed = 3000, colors = { primary: '#6B4CE6',
         </Svg>
       </View>
 
-      {/* Rotating arrows */}
+      {/* Rotating curved arrows */}
       <AnimatedView style={[styles.arrowsContainer, animatedStyle]}>
         <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={styles.arrowSvg}>
-          {/* Arrow 1 - pointing up */}
-          <Polygon
-            points={`${centerX},${centerY - radius - arrowSize} ${centerX - arrowSize / 2},${centerY - radius} ${centerX + arrowSize / 2},${centerY - radius}`}
+          {/* Arrow 1 - starting from top */}
+          <Path
+            d={createCurvedArrowPath(-Math.PI / 2)}
             fill={colors.primary}
           />
 
-          {/* Arrow 2 - pointing 120 degrees */}
-          <Polygon
-            points={`${centerX + (radius + arrowSize) * Math.cos(Math.PI / 6)},${centerY + (radius + arrowSize) * Math.sin(Math.PI / 6)} ${centerX + radius * Math.cos(Math.PI / 6) - arrowSize / 4},${centerY + radius * Math.sin(Math.PI / 6) + arrowSize / 2} ${centerX + radius * Math.cos(Math.PI / 6) + arrowSize / 4},${centerY + radius * Math.sin(Math.PI / 6) - arrowSize / 2}`}
+          {/* Arrow 2 - starting from 120 degrees */}
+          <Path
+            d={createCurvedArrowPath(Math.PI / 6)}
             fill={colors.secondary}
           />
 
-          {/* Arrow 3 - pointing 240 degrees */}
-          <Polygon
-            points={`${centerX + (radius + arrowSize) * Math.cos(7 * Math.PI / 6)},${centerY + (radius + arrowSize) * Math.sin(7 * Math.PI / 6)} ${centerX + radius * Math.cos(7 * Math.PI / 6) - arrowSize / 4},${centerY + radius * Math.sin(7 * Math.PI / 6) - arrowSize / 2} ${centerX + radius * Math.cos(7 * Math.PI / 6) + arrowSize / 4},${centerY + radius * Math.sin(7 * Math.PI / 6) + arrowSize / 2}`}
+          {/* Arrow 3 - starting from 240 degrees */}
+          <Path
+            d={createCurvedArrowPath(7 * Math.PI / 6)}
             fill={colors.primary}
           />
         </Svg>
