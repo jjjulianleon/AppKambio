@@ -2,15 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  ActivityIndicator,
   ScrollView,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
@@ -18,12 +15,17 @@ import { login } from '../../services/authService';
 import { isValidEmail } from '../../utils/helpers';
 import { isBiometricAvailable, getBiometricType, getBiometricTypeName } from '../../services/biometricService';
 import { saveCredentialsForBiometric, isBiometricSetup } from '../../services/secureCredentialService';
+import { Input, Button } from '../../components/ui';
+import { useToast } from '../../contexts/ToastContext';
+import { haptics } from '../../utils/haptics';
 
 const LoginScreen = ({ navigation }) => {
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -44,20 +46,32 @@ const LoginScreen = ({ navigation }) => {
   }, []);
 
   const handleLogin = async () => {
+    // Clear previous errors
+    setEmailError('');
+    setPasswordError('');
+
     // Validation
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      await haptics.error();
+      if (!email) setEmailError('El email es requerido');
+      if (!password) setPasswordError('La contraseña es requerida');
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      await haptics.error();
+      setEmailError('Email inválido');
+      toast.error('Por favor ingresa un email válido');
       return;
     }
 
+    await haptics.medium();
     setLoading(true);
     try {
       const response = await login(email, password);
+
+      await haptics.success();
 
       // Check if we should prompt for biometric setup
       const biometricAvailable = await isBiometricAvailable();
@@ -68,72 +82,76 @@ const LoginScreen = ({ navigation }) => {
         const biometricType = await getBiometricType();
         const biometricName = getBiometricTypeName(biometricType);
 
-        Alert.alert(
-          'Habilitar autenticación biométrica',
-          `¿Deseas usar ${biometricName} para iniciar sesión más rápido la próxima vez?`,
-          [
-            {
-              text: 'Ahora no',
-              style: 'cancel',
-              onPress: () => {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'MainTabs' }]
-                });
-              }
-            },
-            {
-              text: 'Sí, habilitar',
-              onPress: async () => {
-                // Save credentials securely
-                const saved = await saveCredentialsForBiometric(email, password);
-                if (saved) {
-                  Alert.alert(
-                    '¡Listo!',
-                    `${biometricName} habilitado. La próxima vez podrás iniciar sesión con tu ${biometricName}.`
-                  );
+        toast.info(`${biometricName} disponible para inicio rápido`, 3000);
+
+        // Note: We'll keep Alert for the biometric prompt as it requires user choice
+        setTimeout(() => {
+          Alert.alert(
+            'Habilitar autenticación biométrica',
+            `¿Deseas usar ${biometricName} para iniciar sesión más rápido la próxima vez?`,
+            [
+              {
+                text: 'Ahora no',
+                style: 'cancel',
+                onPress: () => {
+                  haptics.light();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }]
+                  });
                 }
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'MainTabs' }]
-                });
+              },
+              {
+                text: 'Sí, habilitar',
+                onPress: async () => {
+                  await haptics.success();
+                  const saved = await saveCredentialsForBiometric(email, password);
+                  if (saved) {
+                    toast.success(`${biometricName} habilitado exitosamente`);
+                  }
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }]
+                  });
+                }
               }
-            }
-          ]
-        );
+            ]
+          );
+        }, 500);
       } else if (biometricAvailable && biometricAlreadySetup) {
         // Update credentials for existing biometric user
         await saveCredentialsForBiometric(email, password);
+        toast.success('¡Bienvenido de vuelta!');
         navigation.reset({
           index: 0,
           routes: [{ name: 'MainTabs' }]
         });
       } else {
         // Navigate to Profile/Dashboard based on onboarding status
+        toast.success('¡Bienvenido de vuelta!');
         navigation.reset({
           index: 0,
           routes: [{ name: 'MainTabs' }]
         });
       }
     } catch (error) {
-      // Manejo de errores sin console.error para evitar mensajes rojos
-      let errorTitle = 'Error de inicio de sesión';
+      await haptics.error();
+
       let errorMessage = 'No se pudo iniciar sesión. Por favor intenta nuevamente.';
 
       if (error.message && error.message.includes('Email o contraseña incorrectos')) {
-        errorTitle = 'Credenciales incorrectas';
-        errorMessage = 'El email o la contraseña que ingresaste no son correctos. Por favor verifica e intenta de nuevo.';
+        errorMessage = 'El email o la contraseña no son correctos';
+        setEmailError('Credenciales incorrectas');
+        setPasswordError('Credenciales incorrectas');
       } else if (error.message && error.message.includes('Network request failed')) {
-        errorTitle = 'Error de conexión';
-        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet';
       } else if (error.isNetworkError) {
-        errorTitle = 'Error de conexión';
-        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet';
       } else if (error.message) {
         errorMessage = error.message;
       }
 
-      Alert.alert(errorTitle, errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -167,73 +185,75 @@ const LoginScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="tu@email.com"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-              </View>
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setEmailError('');
+                }}
+                placeholder="tu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={emailError}
+                leftIcon="📧"
+                showClearButton
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={[styles.input, styles.inputWithIcon]}
-                    placeholder="••••••••"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <Input
+                label="Contraseña"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError('');
+                }}
+                placeholder="••••••••"
+                secureTextEntry
+                error={passwordError}
+                leftIcon="🔒"
+                style={{ marginTop: SPACING.md }}
+              />
 
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+              <Button
+                title="Iniciar Sesión"
                 onPress={handleLogin}
+                loading={loading}
                 disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color={COLORS.textLight} />
-                ) : (
-                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                )}
-              </TouchableOpacity>
+                variant="primary"
+                size="large"
+                fullWidth
+                hapticFeedback="medium"
+                style={{ marginTop: SPACING.lg }}
+              />
 
-              <TouchableOpacity
-                style={styles.forgotPasswordButton}
-                onPress={() => navigation.navigate('ForgotPassword')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
-              </TouchableOpacity>
+              <Button
+                title="¿Olvidaste tu contraseña?"
+                onPress={() => {
+                  haptics.light();
+                  navigation.navigate('ForgotPassword');
+                }}
+                variant="ghost"
+                size="medium"
+                fullWidth
+                hapticFeedback="light"
+                style={{ marginTop: SPACING.md }}
+                textStyle={{ textDecorationLine: 'underline' }}
+              />
 
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => navigation.navigate(ROUTES.REGISTER)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.linkText}>
-                  ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
-                </Text>
-              </TouchableOpacity>
+              <Button
+                title="¿No tienes cuenta? Regístrate"
+                onPress={() => {
+                  haptics.light();
+                  navigation.navigate(ROUTES.REGISTER);
+                }}
+                variant="ghost"
+                size="medium"
+                fullWidth
+                hapticFeedback="light"
+                style={{ marginTop: SPACING.sm }}
+                textStyle={{ color: COLORS.primary, fontWeight: '700' }}
+              />
             </View>
           </Animated.View>
         </ScrollView>
@@ -261,7 +281,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 0,
-    marginBottom: SPACING.md
+    marginBottom: SPACING.lg
   },
   title: {
     fontSize: FONT_SIZES.xxxl,
@@ -278,88 +298,6 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1
-  },
-  inputGroup: {
-    marginBottom: SPACING.md
-  },
-  label: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.sm
-  },
-  inputContainer: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.sm
-  },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 2,
-    borderColor: COLORS.borderLight,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    fontWeight: '500'
-  },
-  inputWithIcon: {
-    paddingRight: SPACING.xl * 2
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: SPACING.lg,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.sm
-  },
-  eyeIcon: {
-    fontSize: 24
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    alignItems: 'center',
-    marginTop: SPACING.md,
-    ...SHADOWS.md
-  },
-  buttonDisabled: {
-    backgroundColor: COLORS.disabled,
-    ...SHADOWS.none
-  },
-  buttonText: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.textLight
-  },
-  forgotPasswordButton: {
-    marginTop: SPACING.md,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center'
-  },
-  forgotPasswordText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: '600',
-    textDecorationLine: 'underline'
-  },
-  linkButton: {
-    marginTop: SPACING.md,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center'
-  },
-  linkText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    fontWeight: '500'
-  },
-  linkTextBold: {
-    fontWeight: '700',
-    color: COLORS.primary
   }
 });
 

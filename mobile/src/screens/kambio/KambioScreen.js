@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, Keyboard, KeyboardAvoidingView,
+  Keyboard, KeyboardAvoidingView,
   Platform, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,9 +9,13 @@ import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, DEFAULT_KAMBIO_AMOUNT, SHAD
 import { createKambio } from '../../services/goalService';
 import CelebrationModal from '../../components/CelebrationModal';
 import { formatCurrency } from '../../utils/helpers';
+import { haptics } from '../../utils/haptics';
+import { useToast } from '../../contexts/ToastContext';
+import { Button } from '../../components/ui';
 
 const KambioScreen = ({ navigation, route }) => {
   const { goal } = route.params;
+  const toast = useToast();
   const [amount, setAmount] = useState(DEFAULT_KAMBIO_AMOUNT.toString());
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,9 +27,13 @@ const KambioScreen = ({ navigation, route }) => {
   const handleSubmit = async () => {
     const amountValue = parseFloat(amount);
     if (isNaN(amountValue) || amountValue <= 0) {
-      Alert.alert('Error', 'Por favor ingresa un monto válido');
+      haptics.error();
+      toast.error('Por favor ingresa un monto válido');
       return;
     }
+
+    // Haptic feedback on button press
+    await haptics.medium();
 
     setLoading(true);
     try {
@@ -40,11 +48,15 @@ const KambioScreen = ({ navigation, route }) => {
       const isGoalCompleted = newAmount >= goal.target_amount;
 
       if (isGoalCompleted) {
+        // Goal completed - big celebration!
+        await haptics.celebrate();
         setCelebrationData({
           type: 'goal',
           message: `¡Completaste tu meta "${goal.name}"! Has ahorrado ${formatCurrency(newAmount)} de ${formatCurrency(goal.target_amount)}`
         });
       } else {
+        // Kambio registered successfully
+        await haptics.success();
         setCelebrationData({
           type: 'kambio',
           message: `Has sumado ${formatCurrency(amountValue)} a tu meta "${goal.name}"`
@@ -53,7 +65,8 @@ const KambioScreen = ({ navigation, route }) => {
 
       setShowCelebration(true);
     } catch (error) {
-      Alert.alert('Error', error.message || 'No se pudo registrar el Kambio');
+      await haptics.error();
+      toast.error(error.message || 'No se pudo registrar el Kambio');
     } finally {
       setLoading(false);
     }
@@ -106,7 +119,10 @@ const KambioScreen = ({ navigation, route }) => {
               {amount && parseFloat(amount) > 0 && (
                 <TouchableOpacity
                   style={styles.confirmButton}
-                  onPress={() => Keyboard.dismiss()}
+                  onPress={() => {
+                    haptics.light();
+                    Keyboard.dismiss();
+                  }}
                 >
                   <Text style={styles.confirmButtonText}>✓</Text>
                 </TouchableOpacity>
@@ -137,7 +153,10 @@ const KambioScreen = ({ navigation, route }) => {
               {description.length > 0 && (
                 <TouchableOpacity
                   style={styles.confirmButtonDescription}
-                  onPress={() => Keyboard.dismiss()}
+                  onPress={() => {
+                    haptics.light();
+                    Keyboard.dismiss();
+                  }}
                 >
                   <Text style={styles.confirmButtonText}>✓</Text>
                 </TouchableOpacity>
@@ -147,25 +166,32 @@ const KambioScreen = ({ navigation, route }) => {
           </View>
 
           {/* Action Buttons */}
-          <TouchableOpacity
-            style={[styles.submitButton, loading && styles.buttonDisabled]}
+          <Button
+            title="Registrar Kambio"
             onPress={handleSubmit}
+            loading={loading}
             disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.textLight} />
-            ) : (
-              <Text style={styles.submitButtonText}>✨ Registrar Kambio</Text>
-            )}
-          </TouchableOpacity>
+            variant="primary"
+            size="large"
+            icon="✨"
+            iconPosition="left"
+            fullWidth
+            hapticFeedback="medium"
+          />
 
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation.goBack()}
+          <Button
+            title="Cancelar"
+            onPress={() => {
+              haptics.light();
+              navigation.goBack();
+            }}
             disabled={loading}
-          >
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
+            variant="ghost"
+            size="large"
+            fullWidth
+            hapticFeedback="light"
+            style={styles.cancelButton}
+          />
         </ScrollView>
 
         <CelebrationModal

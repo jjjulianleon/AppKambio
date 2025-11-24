@@ -6,7 +6,6 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Alert,
   Animated
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,10 +15,14 @@ import { getAllGoals, getKambiosWithMonthlySummary } from '../../services/goalSe
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';
+import { haptics } from '../../utils/haptics';
+import { useToast } from '../../contexts/ToastContext';
+import { Button, EmptyState } from '../../components/ui';
 import GoalCard from '../../components/GoalCard';
 import KambioButton from '../../components/KambioButton';
 
 const DashboardScreen = ({ navigation }) => {
+  const toast = useToast();
   const [goals, setGoals] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -135,9 +138,12 @@ const DashboardScreen = ({ navigation }) => {
   const toggleCompleted = () => {
     const willExpand = !completedExpanded;
     const toValue = willExpand ? 1 : 0;
-    
+
+    // Haptic feedback
+    haptics.selection();
+
     setCompletedExpanded(willExpand);
-    
+
     Animated.parallel([
       Animated.timing(rotateAnim, {
         toValue,

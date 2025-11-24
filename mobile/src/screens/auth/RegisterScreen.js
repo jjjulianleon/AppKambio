@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  ActivityIndicator,
   ScrollView,
   Animated
 } from 'react-native';
@@ -17,14 +13,20 @@ import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../
 import { register } from '../../services/authService';
 import { isValidEmail, validatePassword } from '../../utils/helpers';
 import RocketAnimation from '../../components/RocketAnimation';
+import { Input, Button } from '../../components/ui';
+import { useToast } from '../../contexts/ToastContext';
+import { haptics } from '../../utils/haptics';
 
 const RegisterScreen = ({ navigation }) => {
+  const toast = useToast();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
+  const [fullNameError, setFullNameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -45,25 +47,43 @@ const RegisterScreen = ({ navigation }) => {
   }, []);
 
   const handleRegister = async () => {
+    // Clear previous errors
+    setFullNameError('');
+    setEmailError('');
+    setPasswordError('');
+
+    // Validation
     if (!fullName || !email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      await haptics.error();
+      if (!fullName) setFullNameError('El nombre es requerido');
+      if (!email) setEmailError('El email es requerido');
+      if (!password) setPasswordError('La contraseña es requerida');
+      toast.error('Por favor completa todos los campos');
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      await haptics.error();
+      setEmailError('Email inválido');
+      toast.error('Por favor ingresa un email válido');
       return;
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      Alert.alert('Error', passwordValidation.message);
+      await haptics.error();
+      setPasswordError(passwordValidation.message);
+      toast.error(passwordValidation.message);
       return;
     }
 
+    await haptics.medium();
     setLoading(true);
     try {
       await register(email, password, fullName);
+
+      await haptics.celebrate();
+      toast.success('¡Cuenta creada exitosamente!');
 
       // Show rocket animation on successful registration
       setShowRocketAnimation(true);
@@ -77,21 +97,20 @@ const RegisterScreen = ({ navigation }) => {
         });
       }, 2000);
     } catch (error) {
-      // Manejo mejorado de errores (sin console.error)
-      let errorTitle = 'Error de registro';
+      await haptics.error();
+
       let errorMessage = 'No se pudo crear la cuenta. Por favor intenta nuevamente.';
 
       if (error.message && error.message.includes('ya existe')) {
-        errorTitle = 'Email ya registrado';
-        errorMessage = 'Este email ya está registrado. Por favor usa otro email o inicia sesión.';
+        errorMessage = 'Este email ya está registrado. Por favor usa otro email o inicia sesión';
+        setEmailError('Email ya registrado');
       } else if (error.message && error.message.includes('Network request failed')) {
-        errorTitle = 'Error de conexión';
-        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet';
       } else if (error.message) {
         errorMessage = error.message;
       }
 
-      Alert.alert(errorTitle, errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
       setShowRocketAnimation(false);
     }
@@ -125,79 +144,78 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nombre completo</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Juan Pérez"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={fullName}
-                    onChangeText={setFullName}
-                    autoCapitalize="words"
-                  />
-                </View>
-              </View>
+              <Input
+                label="Nombre completo"
+                value={fullName}
+                onChangeText={(text) => {
+                  setFullName(text);
+                  setFullNameError('');
+                }}
+                placeholder="Juan Pérez"
+                autoCapitalize="words"
+                error={fullNameError}
+                leftIcon="👤"
+                showClearButton
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="tu@email.com"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-              </View>
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setEmailError('');
+                }}
+                placeholder="tu@email.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={emailError}
+                leftIcon="📧"
+                showClearButton
+                style={{ marginTop: SPACING.md }}
+              />
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña</Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={[styles.input, styles.inputWithIcon]}
-                    placeholder="Mínimo 6 caracteres"
-                    placeholderTextColor={COLORS.placeholder}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <Input
+                label="Contraseña"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError('');
+                }}
+                placeholder="Mínimo 6 caracteres"
+                secureTextEntry
+                error={passwordError}
+                leftIcon="🔒"
+                style={{ marginTop: SPACING.md }}
+              />
 
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+              <Button
+                title="Crear cuenta"
                 onPress={handleRegister}
+                loading={loading}
                 disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color={COLORS.textLight} />
-                ) : (
-                  <Text style={styles.buttonText}>Crear cuenta</Text>
-                )}
-              </TouchableOpacity>
+                variant="primary"
+                size="large"
+                fullWidth
+                hapticFeedback="medium"
+                icon="🚀"
+                iconPosition="right"
+                style={{ marginTop: SPACING.lg }}
+              />
 
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => navigation.navigate(ROUTES.LOGIN)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.linkText}>
-                  ¿Ya tienes cuenta? <Text style={styles.linkTextBold}>Inicia sesión</Text>
-                </Text>
-              </TouchableOpacity>
+              <Button
+                title="¿Ya tienes cuenta? Inicia sesión"
+                onPress={() => {
+                  haptics.light();
+                  navigation.navigate(ROUTES.LOGIN);
+                }}
+                variant="ghost"
+                size="medium"
+                fullWidth
+                hapticFeedback="light"
+                style={{ marginTop: SPACING.md }}
+                textStyle={{ color: COLORS.primary, fontWeight: '700' }}
+              />
             </View>
           </Animated.View>
         </ScrollView>
@@ -233,7 +251,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginTop: 0,
-    marginBottom: SPACING.md
+    marginBottom: SPACING.lg
   },
   title: {
     fontSize: FONT_SIZES.xxxl,
@@ -250,77 +268,6 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1
-  },
-  inputGroup: {
-    marginBottom: SPACING.md
-  },
-  label: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: SPACING.sm
-  },
-  inputContainer: {
-    backgroundColor: COLORS.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.sm
-  },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 2,
-    borderColor: COLORS.borderLight,
-    borderRadius: BORDER_RADIUS.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    fontWeight: '500'
-  },
-  inputWithIcon: {
-    paddingRight: SPACING.xl * 2
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: SPACING.lg,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.sm
-  },
-  eyeIcon: {
-    fontSize: 24
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
-    alignItems: 'center',
-    marginTop: SPACING.md,
-    ...SHADOWS.md
-  },
-  buttonDisabled: {
-    backgroundColor: COLORS.disabled,
-    ...SHADOWS.none
-  },
-  buttonText: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.textLight
-  },
-  linkButton: {
-    marginTop: SPACING.md,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center'
-  },
-  linkText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textSecondary,
-    fontWeight: '500'
-  },
-  linkTextBold: {
-    fontWeight: '700',
-    color: COLORS.primary
   }
 });
 

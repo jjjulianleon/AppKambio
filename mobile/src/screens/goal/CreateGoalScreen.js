@@ -1,36 +1,54 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, ScrollView
+  View, Text, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, MIN_GOAL_AMOUNT,
-  MAX_GOAL_NAME_LENGTH } from '../../utils/constants';
+  MAX_GOAL_NAME_LENGTH, SHADOWS } from '../../utils/constants';
 import { createGoal } from '../../services/goalService';
 import { markOnboardingCompleted } from '../../services/authService';
+import { Input, Button } from '../../components/ui';
+import { useToast } from '../../contexts/ToastContext';
+import { haptics } from '../../utils/haptics';
 
 const CreateGoalScreen = ({ navigation, route }) => {
+  const toast = useToast();
   const isOnboarding = route?.params?.isOnboarding || false;
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const [amountError, setAmountError] = useState('');
 
   const handleCreate = async () => {
+    // Clear previous errors
+    setNameError('');
+    setAmountError('');
+
+    // Validations
     if (!name.trim()) {
-      Alert.alert('Error', 'Por favor ingresa un nombre para tu meta');
+      await haptics.error();
+      setNameError('El nombre es requerido');
+      toast.error('Por favor ingresa un nombre para tu meta');
       return;
     }
 
     if (name.length > MAX_GOAL_NAME_LENGTH) {
-      Alert.alert('Error', `El nombre no puede tener más de ${MAX_GOAL_NAME_LENGTH} caracteres`);
+      await haptics.error();
+      setNameError(`Máximo ${MAX_GOAL_NAME_LENGTH} caracteres`);
+      toast.error(`El nombre no puede tener más de ${MAX_GOAL_NAME_LENGTH} caracteres`);
       return;
     }
 
     const amount = parseFloat(targetAmount);
     if (isNaN(amount) || amount < MIN_GOAL_AMOUNT) {
-      Alert.alert('Error', `El monto debe ser al menos $${MIN_GOAL_AMOUNT}`);
+      await haptics.error();
+      setAmountError(`Mínimo $${MIN_GOAL_AMOUNT}`);
+      toast.error(`El monto debe ser al menos $${MIN_GOAL_AMOUNT}`);
       return;
     }
 
+    await haptics.medium();
     setLoading(true);
     try {
       await createGoal({
@@ -38,19 +56,25 @@ const CreateGoalScreen = ({ navigation, route }) => {
         target_amount: amount
       });
 
+      await haptics.celebrate();
+      toast.success('¡Meta creada exitosamente!');
+
       if (isOnboarding) {
         await markOnboardingCompleted();
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }]
-        });
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }]
+          });
+        }, 1000);
       } else {
-        Alert.alert('¡Éxito!', 'Meta creada correctamente', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1000);
       }
     } catch (error) {
-      Alert.alert('Error', error.message || 'No se pudo crear la meta');
+      await haptics.error();
+      toast.error(error.message || 'No se pudo crear la meta');
     } finally {
       setLoading(false);
     }
@@ -67,46 +91,51 @@ const CreateGoalScreen = ({ navigation, route }) => {
         )}
 
         <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>¿Qué quieres lograr?</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ej: Viaje a la playa, Nueva laptop..."
-              value={name}
-              onChangeText={setName}
-              maxLength={MAX_GOAL_NAME_LENGTH}
-            />
-            <Text style={styles.charCount}>{name.length}/{MAX_GOAL_NAME_LENGTH}</Text>
-          </View>
+          <Input
+            label="¿Qué quieres lograr?"
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
+              setNameError('');
+            }}
+            placeholder="Ej: Viaje a la playa, Nueva laptop..."
+            maxLength={MAX_GOAL_NAME_LENGTH}
+            showCharacterCount
+            error={nameError}
+            leftIcon="🎯"
+            showClearButton
+          />
 
-          <View style={styles.inputGroup}>
+          <View style={styles.amountSection}>
             <Text style={styles.label}>¿Cuánto necesitas?</Text>
             <View style={styles.amountInputContainer}>
               <Text style={styles.currencySymbol}>$</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="100.00"
+              <Input
                 value={targetAmount}
-                onChangeText={setTargetAmount}
+                onChangeText={(text) => {
+                  setTargetAmount(text);
+                  setAmountError('');
+                }}
+                placeholder="100.00"
                 keyboardType="decimal-pad"
+                error={amountError}
+                style={styles.amountInputField}
               />
             </View>
             <Text style={styles.hint}>Monto mínimo: ${MIN_GOAL_AMOUNT}</Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Button
+            title={isOnboarding ? '🚀 Comenzar mi viaje' : '✨ Crear meta'}
             onPress={handleCreate}
+            loading={loading}
             disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.textLight} />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isOnboarding ? 'Comenzar mi viaje' : 'Crear meta'}
-              </Text>
-            )}
-          </TouchableOpacity>
+            variant="primary"
+            size="large"
+            fullWidth
+            hapticFeedback="medium"
+            style={{ marginTop: SPACING.xl }}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -114,27 +143,66 @@ const CreateGoalScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  scrollContent: { flexGrow: 1, padding: SPACING.xl },
-  onboardingHeader: { marginTop: SPACING.xl, marginBottom: SPACING.xxl },
-  onboardingTitle: { fontSize: FONT_SIZES.xxxl, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.sm },
-  onboardingText: { fontSize: FONT_SIZES.md, color: COLORS.textSecondary },
-  form: { flex: 1 },
-  inputGroup: { marginBottom: SPACING.xl },
-  label: { fontSize: FONT_SIZES.lg, fontWeight: '600', color: COLORS.text, marginBottom: SPACING.md },
-  input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.md,
-    fontSize: FONT_SIZES.md, color: COLORS.text },
-  charCount: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, marginTop: SPACING.xs, textAlign: 'right' },
-  amountInputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: SPACING.md },
-  currencySymbol: { fontSize: FONT_SIZES.xl, fontWeight: 'bold', color: COLORS.primary, marginRight: SPACING.sm },
-  amountInput: { flex: 1, paddingVertical: SPACING.md, fontSize: FONT_SIZES.xl, color: COLORS.text },
-  hint: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary, marginTop: SPACING.xs },
-  button: { backgroundColor: COLORS.primary, paddingVertical: SPACING.md, borderRadius: BORDER_RADIUS.xl,
-    alignItems: 'center', marginTop: SPACING.xl },
-  buttonDisabled: { backgroundColor: COLORS.disabled },
-  buttonText: { fontSize: FONT_SIZES.lg, fontWeight: 'bold', color: COLORS.textLight }
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.backgroundLight
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: SPACING.xl,
+    paddingBottom: SPACING.xxxl
+  },
+  onboardingHeader: {
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xxl,
+    backgroundColor: COLORS.surface,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.md
+  },
+  onboardingTitle: {
+    fontSize: FONT_SIZES.xxxl,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    letterSpacing: -0.5
+  },
+  onboardingText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.textSecondary,
+    lineHeight: FONT_SIZES.md * 1.5
+  },
+  form: {
+    flex: 1
+  },
+  label: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.md
+  },
+  amountSection: {
+    marginTop: SPACING.xl
+  },
+  amountInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm
+  },
+  currencySymbol: {
+    fontSize: FONT_SIZES.xxl,
+    fontWeight: '700',
+    color: COLORS.primary
+  },
+  amountInputField: {
+    flex: 1
+  },
+  hint: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+    fontStyle: 'italic'
+  }
 });
 
 export default CreateGoalScreen;

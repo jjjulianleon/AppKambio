@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { LogBox } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initializeNotifications } from './src/services/notificationService';
+import { ToastProvider } from './src/contexts/ToastContext';
 
 // Ignore specific warnings
 LogBox.ignoreLogs([
@@ -27,9 +28,9 @@ export default function App() {
   };
 
   return (
-    <>
+    <ToastProvider>
       <StatusBar style="auto" />
       <AppNavigator />
-    </>
+    </ToastProvider>
   );
 }

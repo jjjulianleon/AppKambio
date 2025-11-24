@@ -43,7 +43,7 @@ const ProgressRing = ({
   // Determinar color según progreso
   const getProgressColor = () => {
     if (progress >= 100) return COLORS.success;
-    if (progress >= 75) return '#FFD700'; // Gold
+    if (progress >= 75) return COLORS.gold; // Using constant now
     if (progress >= 50) return COLORS.primary;
     return COLORS.secondary;
   };
