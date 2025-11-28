@@ -199,6 +199,7 @@ const LoginScreen = ({ navigation }) => {
                 error={emailError}
                 leftIcon="📧"
                 showClearButton
+                style={{ marginTop: SPACING.md }}
               />
 
               <Input
@@ -210,6 +211,9 @@ const LoginScreen = ({ navigation }) => {
                 }}
                 placeholder="••••••••"
                 secureTextEntry
+                textContentType="password"
+                autoComplete="password"
+                nativeID="password"
                 error={passwordError}
                 leftIcon="🔒"
                 style={{ marginTop: SPACING.md }}

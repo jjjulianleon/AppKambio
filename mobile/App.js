@@ -11,6 +11,8 @@ LogBox.ignoreLogs([
   'expo-notifications: Android Push notifications'
 ]);
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 export default function App() {
   useEffect(() => {
     setupNotifications();
@@ -28,9 +30,11 @@ export default function App() {
   };
 
   return (
-    <ToastProvider>
-      <StatusBar style="auto" />
-      <AppNavigator />
-    </ToastProvider>
+    <SafeAreaProvider>
+      <ToastProvider>
+        <StatusBar style="auto" />
+        <AppNavigator />
+      </ToastProvider>
+    </SafeAreaProvider>
   );
 }

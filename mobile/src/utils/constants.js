@@ -1,9 +1,8 @@
 // API Configuration
 // Usando localhost para modo tunnel de Expo (funciona desde WSL)
 export const API_URL = __DEV__
-  ? 'http://172.21.138.188:3000/api'
-  // 192.168.0.102 ip casa
-  // 172.21.138.188 ip universidad (actualizada)
+  ? 'http://192.168.0.105:3000/api'
+  // 192.168.0.105 ip actual
   : 'https://your-production-api.com/api';
 
 // Colors - Enhanced palette with more humanistic, warm tones

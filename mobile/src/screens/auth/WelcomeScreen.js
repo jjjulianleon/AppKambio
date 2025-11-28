@@ -7,13 +7,12 @@ import {
   StatusBar,
   ScrollView,
   Animated,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, ROUTES, SHADOWS } from '../../utils/constants';
-import LogoAnimated from '../../components/LogoAnimated';
-import ParallaxBackground from '../../components/ParallaxBackground';
 import { isBiometricAvailable, authenticate, getBiometricType, getBiometricTypeName } from '../../services/biometricService';
 import { getSavedCredentials, isBiometricSetup } from '../../services/secureCredentialService';
 import { login } from '../../services/authService';
@@ -149,13 +148,7 @@ const WelcomeScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Parallax Background */}
-      <ParallaxBackground
-        gradientStart={COLORS.primary}
-        gradientEnd={COLORS.secondary}
-      />
+      <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -173,17 +166,15 @@ const WelcomeScreen = ({ navigation }) => {
           >
             <View style={styles.mainContent}>
               <View style={styles.header}>
-                {/* Animated Logo */}
-                <LogoAnimated
-                  size={140}
-                  speed={3000}
-                  colors={{ primary: COLORS.textLight, secondary: COLORS.secondary }}
+                {/* Logo Image */}
+                <Image
+                  source={require('../../../assets/images/logoKambio.jpg')}
+                  style={styles.logo}
+                  resizeMode="contain"
                 />
 
-                <Text style={styles.appName}>Kambio</Text>
-
                 <Text style={styles.subtitle}>
-                  Transforma tus gastos hormiga{'\n'}en ahorro inteligente
+                  ¡Transforma tus gastos hormiga{'\n'}en ahorro inteligente!
                 </Text>
               </View>
 
@@ -239,104 +230,104 @@ const WelcomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary
+    backgroundColor: '#FFFFFF'
   },
   safeArea: {
     flex: 1
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: SPACING.xl
+    paddingBottom: SPACING.md // Reduced padding
   },
   content: {
     flex: 1,
     paddingHorizontal: SPACING.xl,
-    justifyContent: 'center'
+    justifyContent: 'space-between', // Distribute space between main content and actions
+    paddingVertical: SPACING.lg
   },
   mainContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: 'flex-start', // Changed from center to pull content up
+    alignItems: 'center',
+    paddingTop: SPACING.xxl // Add some top padding
   },
   header: {
     alignItems: 'center',
-    marginBottom: SPACING.xxl
+    marginBottom: SPACING.md, // Reduced from lg
+    width: '100%'
   },
-  appName: {
-    fontSize: FONT_SIZES.xxxl * 1.5,
-    fontWeight: '900',
-    color: COLORS.textLight,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.md,
-    letterSpacing: 1
+  logo: {
+    width: '100%',
+    height: 280, // Reduced from 350 to minimize whitespace
+    marginBottom: 0 // Removed margin completely
   },
   subtitle: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: FONT_SIZES.lg * 1.5,
+    lineHeight: FONT_SIZES.lg * 1.4,
     paddingHorizontal: SPACING.md,
     fontWeight: '600',
     opacity: 0.9
   },
   callToAction: {
     paddingHorizontal: SPACING.xl,
-    marginTop: SPACING.xxl,
-    marginBottom: SPACING.xxl
+    marginTop: SPACING.xl, // Reduced from xxl
+    marginBottom: SPACING.xl  // Reduced from xxl
   },
   ctaText: {
     fontSize: FONT_SIZES.xl,
-    color: COLORS.textLight,
+    color: COLORS.primary,
     textAlign: 'center',
     fontWeight: '700',
-    lineHeight: FONT_SIZES.xl * 1.4
+    lineHeight: FONT_SIZES.xl * 1.3
   },
   actions: {
-    paddingBottom: SPACING.xl,
-    width: '100%'
+    width: '100%',
+    paddingBottom: SPACING.sm
   },
   biometricButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.backgroundDark,
+    paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.xxl,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginBottom: SPACING.lg, // Increased from md
+    borderWidth: 1,
+    borderColor: COLORS.border,
     flexDirection: 'row'
   },
   biometricIcon: {
-    fontSize: 28,
+    fontSize: 24,
     marginRight: SPACING.sm
   },
   biometricText: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
-    color: COLORS.textLight
+    color: COLORS.text
   },
   primaryButton: {
-    backgroundColor: COLORS.textLight,
+    backgroundColor: COLORS.primary,
     paddingVertical: SPACING.lg,
     borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.md, // Increased from sm
     ...SHADOWS.lg
   },
   primaryButtonText: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
-    color: COLORS.primary
+    color: COLORS.textLight
   },
   secondaryButton: {
     paddingVertical: SPACING.md,
     alignItems: 'center',
-    marginTop: SPACING.sm
+    marginTop: SPACING.md // Increased from xs
   },
   secondaryButtonText: {
     fontSize: FONT_SIZES.md,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     fontWeight: '600'
   }
 });

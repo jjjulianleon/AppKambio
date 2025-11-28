@@ -5,7 +5,8 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-  interpolateColor
+  interpolateColor,
+  interpolate
 } from 'react-native-reanimated';
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, FONT_WEIGHTS, SHADOWS } from '../../utils/constants';
 import { haptics } from '../../utils/haptics';
@@ -50,11 +51,18 @@ const Input = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  // Local state to track if input has content, handling both prop updates and native autofill
+  const [hasContent, setHasContent] = useState(Boolean(value));
   const inputRef = useRef(null);
 
   const focusAnim = useSharedValue(0);
   const errorShakeAnim = useSharedValue(0);
   const labelPosition = useSharedValue(value ? 1 : 0);
+
+  // Sync local state with prop value
+  React.useEffect(() => {
+    setHasContent(Boolean(value));
+  }, [value]);
 
   // Handle focus
   const handleFocus = (e) => {
@@ -69,7 +77,7 @@ const Input = ({
   const handleBlur = (e) => {
     setIsFocused(false);
     focusAnim.value = withSpring(0, { damping: 15 });
-    if (!value) {
+    if (!hasContent) {
       labelPosition.value = withTiming(0, { duration: 200 });
     }
     onBlur && onBlur(e);
@@ -84,6 +92,15 @@ const Input = ({
       haptics.error();
     }
   }, [error]);
+
+  // Update label position based on content or focus
+  React.useEffect(() => {
+    if (hasContent || isFocused) {
+      labelPosition.value = withTiming(1, { duration: 200 });
+    } else {
+      labelPosition.value = withTiming(0, { duration: 200 });
+    }
+  }, [hasContent, isFocused]);
 
   // Container animated style
   const containerAnimatedStyle = useAnimatedStyle(() => {
@@ -107,10 +124,10 @@ const Input = ({
     return {
       transform: [
         {
-          translateY: labelPosition.value === 1 ? -28 : 0
+          translateY: interpolate(labelPosition.value, [0, 1], [0, -28])
         },
         {
-          scale: labelPosition.value === 1 ? 0.85 : 1
+          scale: interpolate(labelPosition.value, [0, 1], [1, 0.85])
         }
       ],
       color: interpolateColor(
@@ -136,11 +153,39 @@ const Input = ({
   const hasError = Boolean(error);
   const hasSuccess = Boolean(success);
 
+  // Handle native change event (for autofill cases that might not trigger onChangeText immediately)
+  const handleOnChange = (e) => {
+    const text = e.nativeEvent.text;
+    if (text && text.length > 0) {
+      labelPosition.value = withTiming(1, { duration: 200 });
+    }
+    if (rest.onChange) {
+      rest.onChange(e);
+    }
+  };
+
+  // Handle selection change (backup for autofill detection)
+  const handleSelectionChange = (e) => {
+    const selection = e.nativeEvent.selection;
+    if (selection && (selection.start > 0 || selection.end > 0)) {
+      labelPosition.value = withTiming(1, { duration: 200 });
+    }
+    if (rest.onSelectionChange) {
+      rest.onSelectionChange(e);
+    }
+  };
+
   return (
     <View style={[styles.wrapper, containerStyle]}>
       {/* Label */}
       {label && (
-        <Animated.View style={[styles.labelContainer, labelAnimatedStyle]}>
+        <Animated.View
+          style={[
+            styles.labelContainer,
+            { left: leftIcon ? SPACING.xl + 12 : SPACING.md },
+            labelAnimatedStyle
+          ]}
+        >
           <Text
             style={[
               styles.label,
@@ -185,8 +230,11 @@ const Input = ({
           ]}
           value={value}
           onChangeText={onChangeText}
+          onChange={handleOnChange}
+          onSelectionChange={handleSelectionChange} // Added selection handler
           onFocus={handleFocus}
           onBlur={handleBlur}
+          importantForAutofill="yes" // Force autofill importance
           placeholder={placeholder}
           placeholderTextColor={COLORS.placeholder}
           secureTextEntry={secureTextEntry && !isPasswordVisible}
@@ -272,7 +320,6 @@ const styles = StyleSheet.create({
 
   labelContainer: {
     position: 'absolute',
-    left: leftIcon ? SPACING.xl + 12 : SPACING.md,
     top: 14,
     zIndex: 1,
     backgroundColor: COLORS.backgroundLight,
