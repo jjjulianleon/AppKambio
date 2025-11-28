@@ -21,6 +21,7 @@ import CreateRequestScreen from '../screens/pool/CreateRequestScreen';
 import EditProfileScreen from '../screens/settings/EditProfileScreen';
 import RewardDetailScreen from '../screens/rewards/RewardDetailScreen';
 import BattlePassHistoryScreen from '../screens/rewards/BattlePassHistoryScreen';
+import InsightsScreen from '../screens/main/InsightsScreen';
 
 // Import tab navigator
 import MainTabNavigator from './MainTabNavigator';
@@ -141,7 +142,7 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.GOAL_DETAIL}
           component={GoalDetailScreen}
-          options={{ 
+          options={{
             title: '',
             headerBackTitle: 'Página Principal'
           }}
@@ -156,7 +157,7 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.KAMBIO}
           component={KambioScreen}
-          options={{ 
+          options={{
             headerShown: false,
             presentation: 'modal'
           }}
@@ -164,7 +165,7 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.CREATE_REQUEST}
           component={CreateRequestScreen}
-          options={{ 
+          options={{
             title: 'Solicitar Ayuda',
             headerBackTitle: 'Pozo'
           }}
@@ -188,9 +189,17 @@ const AppNavigator = () => {
         <Stack.Screen
           name="BattlePassHistory"
           component={BattlePassHistoryScreen}
-          options={{ 
+          options={{
             title: 'Historial',
             headerBackTitle: 'Battle Pass'
+          }}
+        />
+        <Stack.Screen
+          name="Insights"
+          component={InsightsScreen}
+          options={{
+            title: 'Insights AI',
+            headerBackTitle: 'Perfil'
           }}
         />
       </Stack.Navigator>

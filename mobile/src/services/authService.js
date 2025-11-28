@@ -153,6 +153,19 @@ export const markOnboardingCompleted = async () => {
 };
 
 /**
+ * Get authentication token
+ */
+export const getToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+    return token;
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
+};
+
+/**
  * Alias for updateProfile
  */
 export const updateUserProfile = updateProfile;

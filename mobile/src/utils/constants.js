@@ -1,8 +1,10 @@
 // API Configuration
-// Usando localhost para modo tunnel de Expo (funciona desde WSL)
+// IMPORTANTE: Actualiza esta IP según tu red local
+// Para encontrar tu IP:
+// - Windows: ipconfig (busca IPv4 en tu adaptador de red)
+// - Mac/Linux: ifconfig o ip addr
 export const API_URL = __DEV__
-  ? 'http://192.168.0.105:3000/api'
-  // 192.168.0.105 ip actual
+  ? 'http://192.168.0.105:3000/api' // Cambia esta IP según tu red local
   : 'https://your-production-api.com/api';
 
 // Colors - Enhanced palette with more humanistic, warm tones

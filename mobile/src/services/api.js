@@ -5,7 +5,7 @@ import { API_URL, STORAGE_KEYS } from '../utils/constants';
 // Create axios instance
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 30000, // Increased to 30 seconds for AI endpoints and slow connections
   headers: {
     'Content-Type': 'application/json'
   }

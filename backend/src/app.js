@@ -15,8 +15,9 @@ const nudgeRoutes = require('./routes/nudges');
 const poolRoutes = require('./routes/pools');
 const splitRoutes = require('./routes/splits');
 const battlePassRoutes = require('./routes/battlePass');
+const insightRoutes = require('./routes/insights');
 
-// Create Express app
+// Initialize Express app
 const app = express();
 
 // Middleware
@@ -47,6 +48,7 @@ app.use('/api/nudges', nudgeRoutes);
 app.use('/api/pools', poolRoutes);
 app.use('/api/splits', splitRoutes);
 app.use('/api/battle-pass', battlePassRoutes);
+app.use('/api/insights', insightRoutes);
 
 // 404 handler
 app.use((req, res) => {

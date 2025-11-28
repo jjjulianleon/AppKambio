@@ -101,6 +101,13 @@ const SettingsScreen = ({ navigation }) => {
               onPress={() => navigation.navigate(ROUTES.EDIT_PROFILE)}
             />
             <SettingItem
+              icon="🤖"
+              title="Insights AI"
+              subtitle="Tu coach financiero personal"
+              onPress={() => navigation.navigate('Insights')}
+              color={COLORS.primary}
+            />
+            <SettingItem
               icon="🔔"
               title="Notificaciones"
               subtitle="Configura tus nudges"

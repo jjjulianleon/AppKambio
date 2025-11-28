@@ -1,1 +1,0 @@
-cd "/mnt/c/Users/Steven Paredes/Documents/AppKambio" && code . 

@@ -14,6 +14,21 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Formato de email inválido'
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: 'La contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -62,6 +77,14 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({
         error: 'Email y contraseña son obligatorios'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Formato de email inválido'
       });
     }
 
@@ -175,6 +198,14 @@ exports.resetPassword = async (req, res, next) => {
     if (!email || !new_password) {
       return res.status(400).json({
         error: 'Email y nueva contraseña son obligatorios'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        error: 'Formato de email inválido'
       });
     }
 

@@ -25,7 +25,10 @@
       "Bash(cmd //c taskkill //PID 10308 //F)",
       "Bash(timeout /t 2)",
       "Bash(git pull:*)",
-      "Bash(timeout /t 5)"
+      "Bash(timeout /t 5)",
+      "Bash(npm run dev:*)",
+      "Bash(cmd //c taskkill //PID 10116 //F)",
+      "Bash(cmd //c taskkill //PID 18900 //F)"
     ],
     "deny": [],
     "ask": []
