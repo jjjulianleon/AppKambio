@@ -4,7 +4,7 @@
 // - Windows: ipconfig (busca IPv4 en tu adaptador de red)
 // - Mac/Linux: ifconfig o ip addr
 export const API_URL = __DEV__
-  ? 'http://192.168.0.105:3000/api' // Cambia esta IP según tu red local
+  ? 'http://192.168.0.105:3000/api' // IP de tu adaptador Wi-Fi (Casa/Local)ador Wi-Fi (Casa/Local)
   : 'https://your-production-api.com/api';
 
 // Colors - Enhanced palette with more humanistic, warm tones
@@ -255,6 +255,7 @@ export const ROUTES = {
   CREATE_GOAL: 'CreateGoal',
   GOAL_DETAIL: 'GoalDetail',
   KAMBIO: 'Kambio',
+  BATTLE_PASS: 'BattlePass',
 
   // Savings Pool
   SAVINGS_POOL: 'SavingsPool',

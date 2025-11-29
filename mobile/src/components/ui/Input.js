@@ -179,16 +179,10 @@ const Input = ({
     <View style={[styles.wrapper, containerStyle]}>
       {/* Label */}
       {label && (
-        <Animated.View
-          style={[
-            styles.labelContainer,
-            { left: leftIcon ? SPACING.xl + 12 : SPACING.md },
-            labelAnimatedStyle
-          ]}
-        >
+        <View style={styles.labelContainerStatic}>
           <Text
             style={[
-              styles.label,
+              styles.labelStatic,
               hasError && styles.labelError,
               hasSuccess && styles.labelSuccess,
               isFocused && styles.labelFocused
@@ -196,7 +190,7 @@ const Input = ({
           >
             {label}
           </Text>
-        </Animated.View>
+        </View>
       )}
 
       {/* Input Container */}
@@ -320,16 +314,26 @@ const styles = StyleSheet.create({
 
   labelContainer: {
     position: 'absolute',
-    top: 14,
+    top: 18,
     zIndex: 1,
     backgroundColor: COLORS.backgroundLight,
     paddingHorizontal: SPACING.xs
+  },
+
+  labelContainerStatic: {
+    marginBottom: SPACING.sm
   },
 
   label: {
     fontSize: FONT_SIZES.md,
     fontWeight: FONT_WEIGHTS.medium,
     color: COLORS.textSecondary
+  },
+
+  labelStatic: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: FONT_WEIGHTS.semibold,
+    color: COLORS.text
   },
 
   labelFocused: {

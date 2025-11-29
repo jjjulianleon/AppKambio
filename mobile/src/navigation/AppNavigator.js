@@ -21,6 +21,7 @@ import CreateRequestScreen from '../screens/pool/CreateRequestScreen';
 import EditProfileScreen from '../screens/settings/EditProfileScreen';
 import RewardDetailScreen from '../screens/rewards/RewardDetailScreen';
 import BattlePassHistoryScreen from '../screens/rewards/BattlePassHistoryScreen';
+import BattlePassScreen from '../screens/rewards/BattlePassScreen';
 import InsightsScreen from '../screens/main/InsightsScreen';
 
 // Import tab navigator
@@ -176,6 +177,14 @@ const AppNavigator = () => {
           options={{
             title: 'Editar Perfil',
             headerBackTitle: 'Perfil'
+          }}
+        />
+        <Stack.Screen
+          name={ROUTES.BATTLE_PASS}
+          component={BattlePassScreen}
+          options={{
+            title: 'Battle Pass',
+            headerBackTitle: 'Progreso'
           }}
         />
         <Stack.Screen

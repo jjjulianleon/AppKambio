@@ -4,12 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../utils/constants';
 
-// Screens
+// New Screens (Reorganized)
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
-import HistoryScreen from '../screens/history/HistoryScreen';
-import BattlePassScreen from '../screens/rewards/BattlePassScreen';
-import SavingsPoolScreen from '../screens/pool/SavingsPoolScreen';
-import SettingsScreen from '../screens/settings/SettingsScreen';
+import FinancesScreen from '../screens/finances/FinancesScreen';
+import ProgressScreen from '../screens/main/ProgressScreen';
+import CoachScreen from '../screens/main/CoachScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -39,6 +38,7 @@ const MainTabNavigator = () => {
         headerShown: false
       }}
     >
+      {/* Tab 1: Inicio - Dashboard con botón prominente de Kambio */}
       <Tab.Screen
         name="DashboardTab"
         component={DashboardScreen}
@@ -49,43 +49,39 @@ const MainTabNavigator = () => {
           )
         }}
       />
+
+      {/* Tab 2: Finanzas - Metas + Ahorros + Gastos */}
       <Tab.Screen
-        name="HistoryTab"
-        component={HistoryScreen}
+        name="FinancesTab"
+        component={FinancesScreen}
         options={{
-          tabBarLabel: 'Kambio',
+          tabBarLabel: 'Finanzas',
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="📊" color={color} />
           )
         }}
       />
+
+      {/* Tab 3: Progreso - Battle Pass + Savings Pool */}
       <Tab.Screen
-        name="BattlePassTab"
-        component={BattlePassScreen}
+        name="ProgressTab"
+        component={ProgressScreen}
         options={{
-          tabBarLabel: 'Recompensas',
+          tabBarLabel: 'Progreso',
           tabBarIcon: ({ color, size }) => (
             <TabIcon icon="🏆" color={color} />
           )
         }}
       />
+
+      {/* Tab 4: Coach - Insights AI + Profile Settings */}
       <Tab.Screen
-        name="SavingsPoolTab"
-        component={SavingsPoolScreen}
+        name="CoachTab"
+        component={CoachScreen}
         options={{
-          tabBarLabel: 'Pozo',
+          tabBarLabel: 'Coach',
           tabBarIcon: ({ color, size }) => (
-            <TabIcon icon="🤝" color={color} />
-          )
-        }}
-      />
-      <Tab.Screen
-        name="SettingsTab"
-        component={SettingsScreen}
-        options={{
-          tabBarLabel: 'Perfil',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon icon="👤" color={color} />
+            <TabIcon icon="🧠" color={color} />
           )
         }}
       />

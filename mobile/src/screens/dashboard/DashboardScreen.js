@@ -16,6 +16,7 @@ import { getAllGoals, getKambiosWithMonthlySummary } from '../../services/goalSe
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';
+import api from '../../services/api';
 import { haptics } from '../../utils/haptics';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, EmptyState } from '../../components/ui';
@@ -32,6 +33,7 @@ const DashboardScreen = ({ navigation }) => {
   const [completedExpanded, setCompletedExpanded] = useState(false);
   const [completedRequests, setCompletedRequests] = useState([]);
   const [totalSaved, setTotalSaved] = useState(0);
+  const [battlePassData, setBattlePassData] = useState(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -88,6 +90,14 @@ const DashboardScreen = ({ navigation }) => {
       } catch (poolError) {
         // No mostrar error si falla la carga del pozo
         console.log('Pool data not available:', poolError);
+      }
+
+      // Cargar datos del Battle Pass
+      try {
+        const battlePassResponse = await api.get('/battle-pass/current');
+        setBattlePassData(battlePassResponse.data);
+      } catch (battlePassError) {
+        console.log('Battle Pass data not available:', battlePassError);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -182,8 +192,24 @@ const DashboardScreen = ({ navigation }) => {
         <Animated.View style={{ opacity: fadeAnim }}>
           {/* Header Card */}
           <View style={styles.headerCard}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.userName}>{user?.full_name || 'Usuario'}</Text>
+            <View style={styles.headerTop}>
+              <View style={styles.headerGreeting}>
+                <Text style={styles.greeting}>{getGreeting()}</Text>
+                <Text style={styles.userName}>{user?.full_name || 'Usuario'}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => {
+                  haptics.selection();
+                  navigation.navigate('CoachTab');
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.settingsIcon}>
+                  <Text style={styles.settingsIconText}>⚙️</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
             <View style={styles.monthlySavingsContainer}>
               <Text style={styles.monthlySavingsLabel}>Este mes has ahorrado:</Text>
               <Text style={styles.monthlySavingsAmount}>{formatCurrency(totalSaved)}</Text>
@@ -206,107 +232,126 @@ const DashboardScreen = ({ navigation }) => {
               </View>
               <TouchableOpacity
                 style={styles.poolNotificationButton}
-                onPress={() => navigation.navigate('SavingsPoolTab')}
+                onPress={() => navigation.navigate('ProgressTab')}
               >
                 <Text style={styles.poolNotificationButtonText}>Ver detalles</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {activeGoals.length === 0 ? (
+          {/* Widget de IA - Consejo del Día */}
+          <TouchableOpacity
+            style={styles.aiWidget}
+            onPress={() => {
+              haptics.selection();
+              navigation.navigate('CoachTab');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.aiWidgetHeader}>
+              <Text style={styles.aiWidgetIcon}>🧠</Text>
+              <Text style={styles.aiWidgetTitle}>Consejo del Día</Text>
+            </View>
+            <Text style={styles.aiWidgetText} numberOfLines={2}>
+              Tu coach financiero tiene tips para ti
+            </Text>
+            <Text style={styles.aiWidgetLink}>Ver más →</Text>
+          </TouchableOpacity>
+
+          {/* Widget de Battle Pass */}
+          <TouchableOpacity
+            style={styles.battlePassWidget}
+            onPress={() => {
+              haptics.selection();
+              navigation.navigate('ProgressTab');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.battlePassHeader}>
+              <Text style={styles.battlePassIcon}>🏆</Text>
+              <View style={styles.battlePassInfo}>
+                <Text style={styles.battlePassTitle}>Battle Pass</Text>
+                <Text style={styles.battlePassLevel}>
+                  Nivel {battlePassData?.battlePass?.current_level || 0}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.battlePassProgress}>
+              <View style={styles.battlePassBar}>
+                <View style={[
+                  styles.battlePassFill,
+                  { width: `${battlePassData?.progressPercentage || 0}%` }
+                ]} />
+              </View>
+              <Text style={styles.battlePassText}>
+                {battlePassData?.battlePass?.total_savings > 0
+                  ? `${formatCurrency(battlePassData.battlePass.total_savings)} ahorrados este mes`
+                  : 'Comienza a ahorrar para subir de nivel'
+                }
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Botón Hacer Kambio - SUPER PROMINENTE */}
+          <View style={styles.kambioSection}>
+            <KambioButton onPress={handleKambio} loading={kambioLoading} />
+            <Text style={styles.kambioHint}>
+              ¿Evitaste un gasto hormiga?{' '}
+              <Text style={styles.kambioHintBold}>¡Regístralo!</Text>
+            </Text>
+          </View>
+
+          {/* Meta Principal (solo la más cercana a completar) */}
+          {activeGoals.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Tu Meta Principal</Text>
+                {activeGoals.length > 1 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>+{activeGoals.length - 1}</Text>
+                  </View>
+                )}
+              </View>
+              <GoalCard
+                goal={activeGoals[0]}
+                onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: activeGoals[0].id })}
+              />
+              <TouchableOpacity
+                style={styles.viewAllGoals}
+                onPress={() => {
+                  haptics.selection();
+                  navigation.navigate('FinancesTab');
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewAllGoalsText}>
+                  Ver todas las metas ({activeGoals.length})
+                </Text>
+                <Text style={styles.arrowIcon}>→</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Empty State - Sin metas */}
+          {activeGoals.length === 0 && (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconContainer}>
                 <Text style={styles.emptyEmoji}>🎯</Text>
               </View>
-              <Text style={styles.emptyTitle}>
-                {goals.length === 0 ? '¡Crea tu primera meta!' : '¡Crea una nueva meta!'}
-              </Text>
+              <Text style={styles.emptyTitle}>¡Crea tu primera meta!</Text>
               <Text style={styles.emptyText}>
                 Define qué quieres lograr y empieza{'\n'}tu camino de ahorro
               </Text>
               <TouchableOpacity
                 style={styles.createButton}
-                onPress={() => navigation.navigate(ROUTES.CREATE_GOAL)}
+                onPress={() => {
+                  haptics.medium();
+                  navigation.navigate('FinancesTab');
+                }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.createButtonText}>Crear Meta</Text>
               </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Meta activa</Text>
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{activeGoals.length}</Text>
-                  </View>
-                </View>
-                {activeGoals.map(goal => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: goal.id })}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.kambioSection}>
-                <KambioButton onPress={handleKambio} loading={kambioLoading} />
-                <Text style={styles.kambioHint}>
-                  ¿Evitaste un gasto hormiga?{' '}
-                  <Text style={styles.kambioHintBold}>¡Regístralo!</Text>
-                </Text>
-              </View>
-
-              <View style={styles.section}>
-                <TouchableOpacity
-                  style={styles.newGoalHeader}
-                  onPress={() => navigation.navigate(ROUTES.CREATE_GOAL)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.sectionTitle}>Crea una nueva meta</Text>
-                  <Text style={styles.arrowIcon}>→</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-
-          {completedGoals.length > 0 && (
-            <View style={styles.section}>
-              <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={toggleCompleted}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.sectionHeader, { marginBottom: 0 }]}>
-                  <Text style={styles.sectionTitle}>Metas completadas</Text>
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{completedGoals.length}</Text>
-                  </View>
-                </View>
-                <Animated.View style={{ transform: [{ rotate: arrowRotation }] }}>
-                  <Text style={styles.arrowIcon}>▼</Text>
-                </Animated.View>
-              </TouchableOpacity>
-              
-              <Animated.View
-                style={{
-                  opacity: heightAnim,
-                  maxHeight: heightAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 1000]
-                  }),
-                  overflow: 'hidden'
-                }}
-              >
-                {completedGoals.map(goal => (
-                  <GoalCard
-                    key={goal.id}
-                    goal={goal}
-                    onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: goal.id })}
-                  />
-                ))}
-              </Animated.View>
             </View>
           )}
         </Animated.View>
@@ -336,6 +381,14 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     ...SHADOWS.md
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start'
+  },
+  headerGreeting: {
+    flex: 1
+  },
   greeting: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textLight,
@@ -348,6 +401,22 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginTop: SPACING.xs,
     letterSpacing: -0.5
+  },
+  settingsButton: {
+    marginLeft: SPACING.sm
+  },
+  settingsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: BORDER_RADIUS.round,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)'
+  },
+  settingsIconText: {
+    fontSize: 24
   },
   monthlySavingsContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -391,7 +460,7 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     fontSize: FONT_SIZES.lg,
-    color: COLORS.primary,
+    color: COLORS.textLight,
     fontWeight: '700'
   },
   badge: {
@@ -460,6 +529,90 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textLight
   },
+  aiWidget: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+    ...SHADOWS.sm
+  },
+  aiWidgetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm
+  },
+  aiWidgetIcon: {
+    fontSize: 24,
+    marginRight: SPACING.sm
+  },
+  aiWidgetTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.text
+  },
+  aiWidgetText: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+    lineHeight: FONT_SIZES.sm * 1.4
+  },
+  aiWidgetLink: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: COLORS.primary
+  },
+  battlePassWidget: {
+    backgroundColor: COLORS.surface,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm
+  },
+  battlePassHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md
+  },
+  battlePassIcon: {
+    fontSize: 32,
+    marginRight: SPACING.sm
+  },
+  battlePassInfo: {
+    flex: 1
+  },
+  battlePassTitle: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: SPACING.xs / 2
+  },
+  battlePassLevel: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.textSecondary
+  },
+  battlePassProgress: {
+    marginTop: SPACING.xs
+  },
+  battlePassBar: {
+    height: 8,
+    backgroundColor: COLORS.borderLight,
+    borderRadius: BORDER_RADIUS.xs,
+    overflow: 'hidden',
+    marginBottom: SPACING.sm
+  },
+  battlePassFill: {
+    height: '100%',
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.xs
+  },
+  battlePassText: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary
+  },
   kambioSection: {
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.lg,
@@ -476,6 +629,21 @@ const styles = StyleSheet.create({
   kambioHintBold: {
     fontWeight: '700',
     color: COLORS.primary
+  },
+  viewAllGoals: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: BORDER_RADIUS.md
+  },
+  viewAllGoalsText: {
+    fontSize: FONT_SIZES.md,
+    fontWeight: '600',
+    color: COLORS.textLight
   },
   newGoalHeader: {
     flexDirection: 'row',

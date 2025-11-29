@@ -28,7 +28,12 @@
       "Bash(timeout /t 5)",
       "Bash(npm run dev:*)",
       "Bash(cmd //c taskkill //PID 10116 //F)",
-      "Bash(cmd //c taskkill //PID 18900 //F)"
+      "Bash(cmd //c taskkill //PID 18900 //F)",
+      "Bash(timeout /t 10)",
+      "Bash(del check-duplicates.js)",
+      "Bash(ping:*)",
+      "Bash(del \"C:\\Users\\Steven Paredes\\Documents\\AppKambio\\mobile\\src\\screens\\battlepass\\BattlePassScreen.js\")",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

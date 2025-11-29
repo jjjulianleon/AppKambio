@@ -33,24 +33,36 @@ const generateFinancialInsight = async (transactions) => {
         }));
 
         const prompt = `
-      Analiza estos gastos de un usuario joven ecuatoriano:
+      Analiza estos gastos de un usuario joven ecuatoriano que está en su camino de ahorro:
       ${JSON.stringify(simplifiedTransactions)}
 
-      Tu objetivo es identificar **patrones de consumo** (ej: "gastas mucho en comida a las 10pm", "tus viernes son de mucha fiesta", "el café de la mañana te está costando $20 al mes").
+      Tu objetivo es identificar patrones de consumo de forma POSITIVA y sugerir pequeñas mejoras sin juzgar.
 
-      Genera un consejo financiero de 1 o 2 frases.
-      Tono: Motivador, juvenil, usa jerga ecuatoriana suave (ej: "¡Qué buena onda!", "Pilas con los gastos hormiga", "Acolita a tu bolsillo", "Ya bájale a las bielas").
-      No seas regañón, sé un "pana" que ayuda.
+      Estructura tu respuesta en 2-3 frases cortas:
+      1. Reconoce algo positivo o interesante de sus hábitos (ej: "¡Qué buena onda que te cuidas con el transporte!")
+      2. Sugiere UNA oportunidad de ahorro de forma amigable (ej: "Mira, si te haces el cafecito en casa en vez de comprarlo, podrías ahorrar como $15 al mes")
+      3. Termina con ánimo para sus metas (ej: "¡Vas súper bien, sigue así y vas a cumplir tus metas!")
+
+      Tono: Tu mejor amigo que te apoya. Usa jerga ecuatoriana muy suave y natural.
+      Ejemplos de tono correcto:
+      - "¡Qué crack! Vi que..."
+      - "Mira, aquí va un dato..."
+      - "¡Estás firme con tus metas!"
+      - "Dale con todo, vas por buen camino"
+
+      NUNCA uses tono de regaño, juicio o crítica. SIEMPRE enfócate en lo positivo primero.
+      NUNCA uses frases como "bájale a", "demasiado", "mucho gasto", "deberías dejar de".
+      SIEMPRE usa frases como "podrías ahorrar", "una idea sería", "qué tal si pruebas", "vas bien".
     `;
 
         const response = await client.post('/chat/completions', {
             model: "gpt-4o-mini",
             messages: [
-                { role: "system", content: "Eres un asistente financiero experto para jóvenes ecuatorianos. Analizas patrones de tiempo y categorías." },
+                { role: "system", content: "Eres el mejor amigo y coach financiero de jóvenes ecuatorianos. Tu rol es MOTIVAR, APOYAR y DAR ÁNIMOS, nunca regañar ni criticar. Siempre encuentras algo positivo primero, luego sugieres mejoras de forma amigable. Eres como ese pana que siempre te impulsa a ser mejor pero con buena onda." },
                 { role: "user", content: prompt }
             ],
-            max_tokens: 150,
-            temperature: 0.7
+            max_tokens: 200,
+            temperature: 0.8
         });
 
         return response.data.choices[0].message.content.trim();

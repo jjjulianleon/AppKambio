@@ -107,22 +107,19 @@ const CreateGoalScreen = ({ navigation, route }) => {
           />
 
           <View style={styles.amountSection}>
-            <Text style={styles.label}>¿Cuánto necesitas?</Text>
-            <View style={styles.amountInputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
-              <Input
-                value={targetAmount}
-                onChangeText={(text) => {
-                  setTargetAmount(text);
-                  setAmountError('');
-                }}
-                placeholder="100.00"
-                keyboardType="decimal-pad"
-                error={amountError}
-                style={styles.amountInputField}
-              />
-            </View>
-            <Text style={styles.hint}>Monto mínimo: ${MIN_GOAL_AMOUNT}</Text>
+            <Input
+              label="¿Cuánto necesitas?"
+              value={targetAmount}
+              onChangeText={(text) => {
+                setTargetAmount(text);
+                setAmountError('');
+              }}
+              placeholder="100.00"
+              keyboardType="decimal-pad"
+              error={amountError}
+              leftIcon="💰"
+              helperText={`Monto mínimo: $${MIN_GOAL_AMOUNT}`}
+            />
           </View>
 
           <Button
@@ -173,7 +170,8 @@ const styles = StyleSheet.create({
     lineHeight: FONT_SIZES.md * 1.5
   },
   form: {
-    flex: 1
+    flex: 1,
+    marginTop: SPACING.xxl
   },
   label: {
     fontSize: FONT_SIZES.lg,

@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   },
   sectionSubtitle: {
     fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary
+    color: COLORS.textLight
   },
   currentRewardCard: {
     backgroundColor: COLORS.surface,

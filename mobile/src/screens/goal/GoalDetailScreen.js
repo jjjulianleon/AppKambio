@@ -83,6 +83,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.scrollContent}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -184,6 +185,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background
   },
+  scrollContent: {
+    paddingBottom: SPACING.xxxl,
+    paddingHorizontal: SPACING.md
+  },
   header: {
     padding: SPACING.xl,
     backgroundColor: COLORS.surface,
@@ -209,7 +214,6 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   progressCard: {
-    marginHorizontal: SPACING.md,
     marginTop: SPACING.md
   },
   section: {
@@ -245,13 +249,10 @@ const styles = StyleSheet.create({
     fontStyle: 'italic'
   },
   kambioButton: {
-    marginHorizontal: SPACING.xl,
     marginTop: SPACING.md
   },
   deleteButton: {
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.xxxl
+    marginTop: SPACING.md
   }
 });
 
