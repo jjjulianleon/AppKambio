@@ -33,7 +33,12 @@
       "Bash(del check-duplicates.js)",
       "Bash(ping:*)",
       "Bash(del \"C:\\Users\\Steven Paredes\\Documents\\AppKambio\\mobile\\src\\screens\\battlepass\\BattlePassScreen.js\")",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(timeout /t 3)",
+      "Bash(cmd //c taskkill //PID 11880 //F)",
+      "Bash(cmd //c taskkill //PID 23240 //F)",
+      "Bash(cmd //c taskkill //PID 4292 //F)",
+      "Bash(cmd //c taskkill //PID 11140 //F)"
     ],
     "deny": [],
     "ask": []

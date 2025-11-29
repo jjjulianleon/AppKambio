@@ -180,11 +180,30 @@ exports.getHistory = async (req, res, next) => {
     const battlePasses = await BattlePass.findAll({
       where: { user_id: userId },
       order: [['month', 'DESC']],
-      limit: 12 // Last 12 months
+      limit: 12, // Last 12 months
+      include: [{
+        model: UserReward,
+        as: 'rewards',
+        attributes: ['id']
+      }]
+    });
+
+    const history = battlePasses.map(bp => {
+      // Parse YYYY-MM-DD string safely
+      const [year, month] = bp.month.split('-');
+
+      return {
+        ...bp.toJSON(),
+        month: parseInt(month),
+        year: parseInt(year),
+        // Count actual rewards earned
+        unlockedRewards: bp.rewards ? bp.rewards.length : 0,
+        completedChallenges: bp.completed_challenges ? bp.completed_challenges.length : 0
+      };
     });
 
     res.json({
-      history: battlePasses
+      history
     });
   } catch (error) {
     next(error);

@@ -12,5 +12,6 @@ router.post('/', goalController.createGoal);
 router.put('/:id', goalController.updateGoal);
 router.delete('/:id', goalController.deleteGoal);
 router.get('/:id/progress', goalController.getGoalProgress);
+router.post('/:id/complete', goalController.completeGoal); // NEW: Complete goal endpoint
 
 module.exports = router;

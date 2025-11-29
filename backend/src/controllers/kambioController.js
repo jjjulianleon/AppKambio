@@ -1,4 +1,4 @@
-const { Kambio, Goal, ExpenseCategory, BattlePass } = require('../models');
+const { Kambio, Goal, ExpenseCategory, BattlePass, UserSavings } = require('../models');
 const { sequelize } = require('../config/database');
 
 // Get all user kambios
@@ -54,70 +54,58 @@ exports.getKambiosByGoal = async (req, res, next) => {
   }
 };
 
-// Create new kambio (register savings)
+// Create new kambio (register savings) - NEW GENERAL SAVINGS SYSTEM
 exports.createKambio = async (req, res, next) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { goal_id, expense_category_id, amount, description } = req.body;
-
-    // Validate required fields
-    if (!goal_id || !amount) {
-      await transaction.rollback();
-      return res.status(400).json({
-        error: 'ID de meta y monto son obligatorios'
-      });
-    }
+    const { expense_category_id, amount, description } = req.body;
 
     // Validate amount
-    if (parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       await transaction.rollback();
       return res.status(400).json({
         error: 'El monto debe ser mayor a 0'
       });
     }
 
-    // Find goal
-    const goal = await Goal.findOne({
-      where: { id: goal_id, user_id: req.userId }
-    });
-
-    if (!goal) {
-      await transaction.rollback();
-      return res.status(404).json({ error: 'Meta no encontrada' });
-    }
-
-    if (goal.status !== 'active') {
-      await transaction.rollback();
-      return res.status(400).json({
-        error: 'La meta no está activa'
-      });
-    }
-
-    // Create kambio
+    // Create kambio (NO goal_id - goes to general savings)
     const kambio = await Kambio.create({
       user_id: req.userId,
-      goal_id,
+      goal_id: null, // General savings - not tied to specific goal
       expense_category_id: expense_category_id || null,
       amount,
+      transaction_type: 'save',
       description: description || null
     }, { transaction });
 
-    // Update goal current_amount
-    const newAmount = parseFloat(goal.current_amount) + parseFloat(amount);
-    goal.current_amount = newAmount;
+    // Update or create UserSavings for current month
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1; // 1-12
+    const year = currentDate.getFullYear();
 
-    // Check if goal is completed
-    if (goal.isCompleted() && goal.status === 'active') {
-      goal.status = 'completed';
-      goal.completed_at = new Date();
+    const [userSavings, created] = await UserSavings.findOrCreate({
+      where: {
+        user_id: req.userId,
+        month,
+        year
+      },
+      defaults: {
+        user_id: req.userId,
+        month,
+        year,
+        total_saved: amount
+      },
+      transaction
+    });
+
+    // If already exists, increment the total
+    if (!created) {
+      userSavings.total_saved = parseFloat(userSavings.total_saved) + parseFloat(amount);
+      await userSavings.save({ transaction });
     }
 
-    await goal.save({ transaction });
-
     // Update Battle Pass with the savings
-    // Create a date representing the first day of the current month (YYYY-MM-01)
-    const currentDate = new Date();
     const monthKey = currentDate.toISOString().split('T')[0].slice(0, 7) + '-01'; // Format: YYYY-MM-01
 
     let battlePass = await BattlePass.findOne({
@@ -166,12 +154,21 @@ exports.createKambio = async (req, res, next) => {
 
     await battlePass.save({ transaction });
 
+    // Get all active goals to show which ones can be completed
+    const activeGoals = await Goal.findAll({
+      where: { user_id: req.userId, status: 'active' },
+      transaction
+    });
+
+    const goalsReadyToComplete = activeGoals.filter(goal =>
+      parseFloat(userSavings.total_saved) >= parseFloat(goal.target_amount)
+    );
+
     await transaction.commit();
 
     // Fetch complete kambio with relationships
     const completeKambio = await Kambio.findByPk(kambio.id, {
       include: [
-        { model: Goal, as: 'goal' },
         { model: ExpenseCategory, as: 'expenseCategory' }
       ]
     });
@@ -179,10 +176,11 @@ exports.createKambio = async (req, res, next) => {
     res.status(201).json({
       message: 'Kambio registrado exitosamente',
       kambio: completeKambio,
-      goal_updated: {
-        current_amount: goal.current_amount,
-        progress: goal.getProgress(),
-        is_completed: goal.isCompleted()
+      savings_updated: {
+        total_saved: userSavings.total_saved,
+        month,
+        year,
+        goals_ready_to_complete: goalsReadyToComplete.length
       },
       battle_pass_updated: {
         total_savings: battlePass.total_savings,

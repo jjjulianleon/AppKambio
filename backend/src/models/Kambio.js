@@ -18,12 +18,12 @@ const Kambio = sequelize.define('Kambio', {
   },
   goal_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true, // Changed to true for general savings system
     references: {
       model: 'goals',
       key: 'id'
     },
-    onDelete: 'CASCADE'
+    onDelete: 'SET NULL'
   },
   expense_category_id: {
     type: DataTypes.UUID,
@@ -36,16 +36,13 @@ const Kambio = sequelize.define('Kambio', {
   },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    validate: {
-      min: 0.01
-    }
+    allowNull: false
   },
   transaction_type: {
-    type: DataTypes.ENUM('credit', 'debit'),
+    type: DataTypes.ENUM('save', 'complete_goal', 'pool_contribution', 'pool_receive'),
     allowNull: false,
-    defaultValue: 'credit',
-    comment: 'credit = ahorro, debit = contribución al pozo'
+    defaultValue: 'save',
+    comment: 'save = ahorro general, complete_goal = completar meta, pool_contribution = contribuir al pozo, pool_receive = recibir del pozo'
   },
   pool_contribution_id: {
     type: DataTypes.UUID,

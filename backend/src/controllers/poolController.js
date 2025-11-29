@@ -1,4 +1,4 @@
-const { SavingsPool, PoolMembership, PoolRequest, PoolContribution, User, Goal, Kambio } = require('../models');
+const { SavingsPool, PoolMembership, PoolRequest, PoolContribution, User, Goal, Kambio, UserSavings } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -44,13 +44,20 @@ exports.getPoolData = async (req, res) => {
     // Calculate each member's total savings
     const membersWithSavings = await Promise.all(
       members.map(async (member) => {
-        const goals = await Goal.findAll({
-          where: { user_id: member.user_id, status: 'active' }
+        // NEW: Get savings from UserSavings table
+        const currentDate = new Date();
+        const month = currentDate.getMonth() + 1;
+        const year = currentDate.getFullYear();
+
+        const userSavings = await UserSavings.findOne({
+          where: {
+            user_id: member.user_id,
+            month,
+            year
+          }
         });
-        
-        const totalSavings = goals.reduce((sum, goal) => {
-          return sum + parseFloat(goal.current_amount || 0);
-        }, 0);
+
+        const totalSavings = userSavings ? parseFloat(userSavings.total_saved) : 0;
 
         return {
           id: member.user.id,
@@ -64,8 +71,8 @@ exports.getPoolData = async (req, res) => {
 
     // Get active requests
     const activeRequests = await PoolRequest.findAll({
-      where: { 
-        pool_id: poolId, 
+      where: {
+        pool_id: poolId,
         status: 'active'
       },
       include: [
@@ -102,8 +109,8 @@ exports.getPoolData = async (req, res) => {
 
     // Get completed requests
     const completedRequests = await PoolRequest.findAll({
-      where: { 
-        pool_id: poolId, 
+      where: {
+        pool_id: poolId,
         status: 'completed'
       },
       include: [
@@ -126,14 +133,20 @@ exports.getPoolData = async (req, res) => {
       completedAt: req.completed_at
     }));
 
-    // Get user's total savings
-    const userGoals = await Goal.findAll({
-      where: { user_id: userId, status: 'active' }
+    // Get user's total savings - NEW GENERAL SAVINGS SYSTEM
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    const userSavingsRecord = await UserSavings.findOne({
+      where: {
+        user_id: userId,
+        month,
+        year
+      }
     });
-    
-    const userSavings = userGoals.reduce((sum, goal) => {
-      return sum + parseFloat(goal.current_amount || 0);
-    }, 0);
+
+    const userSavings = userSavingsRecord ? parseFloat(userSavingsRecord.total_saved) : 0;
 
     res.json({
       success: true,
@@ -183,13 +196,20 @@ exports.getPoolMembers = async (req, res) => {
 
     const membersWithSavings = await Promise.all(
       members.map(async (member) => {
-        const goals = await Goal.findAll({
-          where: { user_id: member.user_id, status: 'active' }
+        // NEW: Get savings from UserSavings table
+        const currentDate = new Date();
+        const month = currentDate.getMonth() + 1;
+        const year = currentDate.getFullYear();
+
+        const userSavings = await UserSavings.findOne({
+          where: {
+            user_id: member.user_id,
+            month,
+            year
+          }
         });
-        
-        const totalSavings = goals.reduce((sum, goal) => {
-          return sum + parseFloat(goal.current_amount || 0);
-        }, 0);
+
+        const totalSavings = userSavings ? parseFloat(userSavings.total_saved) : 0;
 
         return {
           id: member.user.id,
@@ -324,7 +344,7 @@ exports.contributeToRequest = async (req, res) => {
     const userGoals = await Goal.findAll({
       where: { user_id: userId, status: 'active' }
     });
-    
+
     const userSavings = userGoals.reduce((sum, goal) => {
       return sum + parseFloat(goal.current_amount || 0);
     }, 0);
@@ -439,28 +459,21 @@ exports.contributeToRequest = async (req, res) => {
       }
     }
 
-    // Deduct from user's goals (proportionally) and create debit Kambios
-    const totalGoalAmount = userGoals.reduce((sum, goal) => sum + parseFloat(goal.current_amount), 0);
-    
-    if (totalGoalAmount > 0) {
-      for (const goal of userGoals) {
-        const goalPercentage = parseFloat(goal.current_amount) / totalGoalAmount;
-        const deduction = amount * goalPercentage;
-        const newAmount = Math.max(0, parseFloat(goal.current_amount) - deduction);
-        await goal.update({ current_amount: newAmount });
-        
-        // Create a debit Kambio to track the contribution
-        if (deduction > 0) {
-          await Kambio.create({
-            user_id: userId,
-            goal_id: goal.id,
-            amount: deduction,
-            transaction_type: 'debit',
-            pool_contribution_id: contribution.id,
-            description: `Contribución al Pozo - ${request.requester.full_name}: ${request.description}`
-          });
-        }
-      }
+    // Deduct from user's general savings and create debit Kambio
+    if (userSavingsRecord && userSavingsRecord.total_saved >= amount) {
+      // Deduct from general savings
+      userSavingsRecord.total_saved = parseFloat(userSavingsRecord.total_saved) - amount;
+      await userSavingsRecord.save();
+
+      // Create a debit Kambio to track the contribution
+      await Kambio.create({
+        user_id: userId,
+        goal_id: null, // General savings
+        amount: amount,
+        transaction_type: 'debit',
+        pool_contribution_id: contribution.id,
+        description: `Contribución al Pozo - ${request.requester.full_name}: ${request.description}`
+      });
     } else {
       console.log('User has no savings in goals, cannot contribute');
       return res.status(400).json({
@@ -510,14 +523,20 @@ exports.calculateContribution = async (req, res) => {
       });
     }
 
-    // Calculate user's savings
-    const userGoals = await Goal.findAll({
-      where: { user_id: userId, status: 'active' }
+    // Calculate user's savings - NEW GENERAL SAVINGS SYSTEM
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    const userSavingsRecord = await UserSavings.findOne({
+      where: {
+        user_id: userId,
+        month,
+        year
+      }
     });
-    
-    const userSavings = userGoals.reduce((sum, goal) => {
-      return sum + parseFloat(goal.current_amount || 0);
-    }, 0);
+
+    const userSavings = userSavingsRecord ? parseFloat(userSavingsRecord.total_saved) : 0;
 
     // Get pool members count
     const membership = await PoolMembership.findOne({
@@ -604,7 +623,7 @@ exports.getActiveRequests = async (req, res) => {
     }
 
     const requests = await PoolRequest.findAll({
-      where: { 
+      where: {
         pool_id: membership.pool_id,
         status: 'active'
       },

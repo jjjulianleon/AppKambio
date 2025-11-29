@@ -65,7 +65,7 @@ const Button = ({
     });
   };
 
-  const handlePress = async () => {
+  const handlePress = async (e) => {
     if (onPress && !disabled && !loading) {
       // Success pulse animation
       scale.value = withSequence(
@@ -74,7 +74,7 @@ const Button = ({
         withSpring(1, { damping: 15 })
       );
 
-      onPress();
+      onPress(e);
     }
   };
 

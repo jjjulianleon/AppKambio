@@ -158,20 +158,28 @@ export const getKambiosWithMonthlySummary = async () => {
       const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
       const amount = parseFloat(kambio.amount) || 0;
 
-      totalHistorical += amount;
+      // Only count positive amounts (savings) for the total "Saved" display
+      // Ignore debits (like goal completions)
+      if (amount > 0) {
+        totalHistorical += amount;
 
-      if (!monthlyMap[monthKey]) {
-        monthlyMap[monthKey] = {
-          month: monthKey,
-          total: 0,
-          count: 0,
-          kambios: [],
-        };
+        if (!monthlyMap[monthKey]) {
+          monthlyMap[monthKey] = {
+            month: monthKey,
+            total: 0,
+            count: 0,
+            kambios: [],
+          };
+        }
+
+        monthlyMap[monthKey].total += amount;
+        monthlyMap[monthKey].count += 1;
       }
 
-      monthlyMap[monthKey].total += amount;
-      monthlyMap[monthKey].count += 1;
-      monthlyMap[monthKey].kambios.push(kambio);
+      // Always add to the list of kambios for display
+      if (monthlyMap[monthKey]) {
+        monthlyMap[monthKey].kambios.push(kambio);
+      }
     });
 
     // Convert to sorted array (newest first)
@@ -201,5 +209,19 @@ export const getKambiosWithMonthlySummary = async () => {
       totalHistorical: 0,
       currentMonthTotal: 0,
     };
+  }
+};
+
+/**
+ * Complete a goal - NEW GENERAL SAVINGS SYSTEM
+ * Withdraws the goal amount from general savings pool
+ */
+export const completeGoal = async (goalId) => {
+  try {
+    const response = await api.post(`/goals/${goalId}/complete`);
+    return handleResponse(response);
+  } catch (error) {
+    handleError(error);
+    throw error;
   }
 };

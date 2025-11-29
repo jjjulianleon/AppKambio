@@ -37,6 +37,11 @@ const Goal = sequelize.define('Goal', {
       min: 0.00
     }
   },
+  completed_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: null
+  },
   image_url: {
     type: DataTypes.STRING(500),
     allowNull: true

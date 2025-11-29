@@ -10,6 +10,7 @@ const SavingsPool = require('./SavingsPool');
 const PoolMembership = require('./PoolMembership');
 const PoolRequest = require('./PoolRequest');
 const PoolContribution = require('./PoolContribution');
+const UserSavings = require('./UserSavings');
 
 // Initialize Split Bill models
 const ExpenseShare = require('./ExpenseShare')(sequelize);
@@ -31,6 +32,7 @@ User.hasMany(ExpenseCategory, { foreignKey: 'user_id', as: 'expenseCategories' }
 User.hasMany(Transaction, { foreignKey: 'user_id', as: 'transactions' });
 User.hasMany(Kambio, { foreignKey: 'user_id', as: 'kambios' });
 User.hasOne(NudgeSetting, { foreignKey: 'user_id', as: 'nudgeSetting' });
+User.hasMany(UserSavings, { foreignKey: 'user_id', as: 'savings' });
 
 // Reverse relationships
 FinancialProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -39,6 +41,7 @@ ExpenseCategory.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Transaction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Kambio.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 NudgeSetting.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+UserSavings.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 // Kambio relationships
 Kambio.belongsTo(Goal, { foreignKey: 'goal_id', as: 'goal' });
@@ -122,6 +125,7 @@ module.exports = {
   PoolMembership,
   PoolRequest,
   PoolContribution,
+  UserSavings,
   ExpenseShare,
   ExpenseShareMember,
   ExpenseShareItem,

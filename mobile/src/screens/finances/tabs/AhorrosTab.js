@@ -10,14 +10,15 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../../../utils/constants';
-import { getAllGoals } from '../../../services/goalService';
+import { getKambiosWithMonthlySummary } from '../../../services/goalService';
 import { formatCurrency, formatDate } from '../../../utils/helpers';
 
 const AhorrosTab = ({ navigation }) => {
   const [kambios, setKambios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [totalSaved, setTotalSaved] = useState(0);
+  const [grossTotal, setGrossTotal] = useState(0); // Total saved (ignoring withdrawals)
+  const [netTotal, setNetTotal] = useState(0);     // Available (after withdrawals)
   const [selectedMonth, setSelectedMonth] = useState('all'); // 'all' or 'YYYY-MM'
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -39,31 +40,25 @@ const AhorrosTab = ({ navigation }) => {
 
   const loadKambios = async () => {
     try {
-      const goalsResponse = await getAllGoals();
-      const allGoals = goalsResponse.goals || [];
+      const data = await getKambiosWithMonthlySummary();
 
-      // Collect all kambios from all goals
-      const allKambios = [];
-      let total = 0;
+      // Calculate totals
+      let gross = 0;
+      let net = 0;
 
-      allGoals.forEach(goal => {
-        if (goal.kambios && goal.kambios.length > 0) {
-          goal.kambios.forEach(kambio => {
-            allKambios.push({
-              ...kambio,
-              goalName: goal.name,
-              goalId: goal.id
-            });
-            total += parseFloat(kambio.amount);
-          });
+      const allKambios = data.allKambios || [];
+
+      allKambios.forEach(k => {
+        const amount = parseFloat(k.amount);
+        net += amount;
+        if (amount > 0) {
+          gross += amount;
         }
       });
 
-      // Sort by date (most recent first)
-      allKambios.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
       setKambios(allKambios);
-      setTotalSaved(total);
+      setGrossTotal(gross);
+      setNetTotal(net);
     } catch (error) {
       console.error('Error loading kambios:', error);
     } finally {
@@ -94,6 +89,9 @@ const AhorrosTab = ({ navigation }) => {
       }
 
       groups[monthKey].kambios.push(kambio);
+      // Only sum positive amounts for the group header display if desired, 
+      // or sum all to show net flow for that month.
+      // Let's show Net Flow for the month to be accurate.
       groups[monthKey].total += parseFloat(kambio.amount);
     });
 
@@ -114,15 +112,20 @@ const AhorrosTab = ({ navigation }) => {
   const filteredKambios = selectedMonth === 'all'
     ? kambios
     : kambios.filter(k => {
-        const date = new Date(k.created_at);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        return monthKey === selectedMonth;
-      });
+      const date = new Date(k.created_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return monthKey === selectedMonth;
+    });
 
   const monthlyGroups = groupByMonth(filteredKambios);
 
-  // Calculate filtered total
-  const filteredTotal = filteredKambios.reduce((sum, k) => sum + parseFloat(k.amount), 0);
+  // Calculate filtered totals
+  const filteredGross = filteredKambios.reduce((sum, k) => {
+    const amount = parseFloat(k.amount);
+    return amount > 0 ? sum + amount : sum;
+  }, 0);
+
+  const filteredNet = filteredKambios.reduce((sum, k) => sum + parseFloat(k.amount), 0);
 
   return (
     <ScrollView
@@ -189,15 +192,25 @@ const AhorrosTab = ({ navigation }) => {
           </ScrollView>
         )}
 
-        {/* Total Saved Card */}
-        <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>
-            {selectedMonth === 'all' ? 'Total Ahorrado' : 'Total del Mes'}
-          </Text>
-          <Text style={styles.totalAmount}>{formatCurrency(filteredTotal)}</Text>
-          <Text style={styles.totalSubtext}>
-            {filteredKambios.length} {filteredKambios.length === 1 ? 'Kambio realizado' : 'Kambios realizados'}
-          </Text>
+        {/* Stats Cards Row */}
+        <View style={styles.statsRowContainer}>
+          {/* Total Saved Card (Gross) */}
+          <View style={[styles.statCard, styles.grossCard]}>
+            <Text style={styles.statCardLabelLight}>
+              {selectedMonth === 'all' ? 'Total Ahorrado' : 'Ahorrado del Mes'}
+            </Text>
+            <Text style={styles.statCardAmountLight}>{formatCurrency(filteredGross)}</Text>
+            <Text style={styles.statCardSubtextLight}>Ingresos brutos</Text>
+          </View>
+
+          {/* Available Card (Net) */}
+          <View style={[styles.statCard, styles.netCard]}>
+            <Text style={styles.statCardLabelDark}>
+              {selectedMonth === 'all' ? 'Disponible' : 'Flujo Neto'}
+            </Text>
+            <Text style={styles.statCardAmountDark}>{formatCurrency(filteredNet)}</Text>
+            <Text style={styles.statCardSubtextDark}>Después de metas</Text>
+          </View>
         </View>
 
         {/* Kambios List */}
@@ -255,7 +268,7 @@ const AhorrosTab = ({ navigation }) => {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  {formatCurrency(totalSaved / (kambios.length || 1))}
+                  {formatCurrency(grossTotal / (kambios.length || 1))}
                 </Text>
                 <Text style={styles.statLabel}>Promedio</Text>
               </View>
@@ -304,32 +317,59 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     lineHeight: FONT_SIZES.md * 1.5
   },
-  totalCard: {
-    backgroundColor: COLORS.primary,
+  statsRowContainer: {
+    flexDirection: 'row',
     marginHorizontal: SPACING.md,
     marginBottom: SPACING.lg,
-    padding: SPACING.xl,
+    gap: SPACING.md
+  },
+  statCard: {
+    flex: 1,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
     ...SHADOWS.md
   },
-  totalLabel: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.textLight,
+  grossCard: {
+    backgroundColor: COLORS.primary
+  },
+  netCard: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 2,
+    borderColor: COLORS.primary
+  },
+  statCardLabelLight: {
+    fontSize: FONT_SIZES.xs,
     fontWeight: '600',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
+    color: COLORS.textLight,
     opacity: 0.9
   },
-  totalAmount: {
-    fontSize: FONT_SIZES.xxxl * 1.2,
+  statCardAmountLight: {
+    fontSize: FONT_SIZES.xl,
     fontWeight: '800',
     color: COLORS.textLight,
-    letterSpacing: -1,
-    marginBottom: SPACING.xs
+    marginBottom: SPACING.xs / 2
   },
-  totalSubtext: {
-    fontSize: FONT_SIZES.sm,
+  statCardSubtextLight: {
+    fontSize: FONT_SIZES.xs,
     color: COLORS.textLight,
+    opacity: 0.8
+  },
+  statCardLabelDark: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '600',
+    marginBottom: SPACING.xs,
+    color: COLORS.textSecondary
+  },
+  statCardAmountDark: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: SPACING.xs / 2
+  },
+  statCardSubtextDark: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textSecondary,
     opacity: 0.8
   },
   monthSection: {

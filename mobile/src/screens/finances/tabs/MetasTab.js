@@ -6,15 +6,19 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../../utils/constants';
-import { getAllGoals } from '../../../services/goalService';
+import { getAllGoals, completeGoal } from '../../../services/goalService';
+import { formatCurrency } from '../../../utils/helpers';
 import { haptics } from '../../../utils/haptics';
+import { useToast } from '../../../contexts/ToastContext';
 import GoalCard from '../../../components/GoalCard';
 
 const MetasTab = ({ navigation }) => {
+  const toast = useToast();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,6 +69,32 @@ const MetasTab = ({ navigation }) => {
       duration: 300,
       useNativeDriver: true
     }).start();
+  };
+
+  const handleCompleteGoal = (goal) => {
+    haptics.warning();
+    Alert.alert(
+      'Completar Meta',
+      `¿Confirmas que quieres completar "${goal.name}"?\n\nSe restarán ${formatCurrency(goal.target_amount)} de tu ahorro general.`,
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => haptics.light() },
+        {
+          text: 'Completar',
+          style: 'default',
+          onPress: async () => {
+            try {
+              await haptics.success();
+              await completeGoal(goal.id);
+              toast.success(`¡Meta "${goal.name}" completada!`);
+              loadGoals(); // Reload to update the list
+            } catch (error) {
+              await haptics.error();
+              toast.error(error.message || 'No se pudo completar la meta');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const activeGoals = goals.filter(g => g.status === 'active');
@@ -137,6 +167,7 @@ const MetasTab = ({ navigation }) => {
                 key={goal.id}
                 goal={goal}
                 onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: goal.id })}
+                onComplete={handleCompleteGoal}
               />
             ))}
           </View>

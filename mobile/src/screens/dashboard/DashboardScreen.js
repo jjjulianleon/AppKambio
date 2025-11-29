@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
-import { getAllGoals, getKambiosWithMonthlySummary } from '../../services/goalService';
+import { getAllGoals, getKambiosWithMonthlySummary, completeGoal } from '../../services/goalService';
 import { getStoredUser } from '../../services/authService';
 import * as savingsPoolService from '../../services/savingsPoolService';
 import { getGreeting, formatCurrency } from '../../utils/helpers';
@@ -113,34 +113,34 @@ const DashboardScreen = ({ navigation }) => {
   };
 
   const handleKambio = async () => {
-    if (activeGoals.length === 0) {
-      Alert.alert('Sin meta activa', 'Por favor crea una meta primero', [
-        { text: 'Crear meta', onPress: () => navigation.navigate(ROUTES.CREATE_GOAL) },
-        { text: 'Cancelar', style: 'cancel' }
-      ]);
-      return;
-    }
+    // NEW: No need to select goal - all savings go to general pool
+    navigation.navigate(ROUTES.KAMBIO);
+  };
 
-    // Si hay más de una meta activa, mostrar selector
-    if (activeGoals.length > 1) {
-      const buttons = activeGoals.map(goal => {
-        const progress = Math.round((goal.current_amount / goal.target_amount) * 100) || 0;
-        return {
-          text: `${goal.name || 'Meta sin nombre'} (${progress}%)`,
-          onPress: () => navigation.navigate(ROUTES.KAMBIO, { goal })
-        };
-      });
-      buttons.push({ text: 'Cancelar', style: 'cancel' });
-
-      Alert.alert(
-        'Selecciona una meta',
-        '¿A qué meta quieres dirigir este ahorro?',
-        buttons
-      );
-    } else {
-      // Si solo hay una meta, ir directo
-      navigation.navigate(ROUTES.KAMBIO, { goal: activeGoals[0] });
-    }
+  const handleCompleteGoal = (goal) => {
+    haptics.warning();
+    Alert.alert(
+      'Completar Meta',
+      `¿Confirmas que quieres completar "${goal.name}"?\n\nSe restarán ${formatCurrency(goal.target_amount)} de tu ahorro general.`,
+      [
+        { text: 'Cancelar', style: 'cancel', onPress: () => haptics.light() },
+        {
+          text: 'Completar',
+          style: 'default',
+          onPress: async () => {
+            try {
+              await haptics.success();
+              await completeGoal(goal.id);
+              toast.success(`¡Meta "${goal.name}" completada!`);
+              loadData(); // Reload to update the list
+            } catch (error) {
+              await haptics.error();
+              toast.error(error.message || 'No se pudo completar la meta');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const activeGoals = goals.filter(g => g.status === 'active');
@@ -315,6 +315,7 @@ const DashboardScreen = ({ navigation }) => {
               <GoalCard
                 goal={activeGoals[0]}
                 onPress={() => navigation.navigate(ROUTES.GOAL_DETAIL, { goalId: activeGoals[0].id })}
+                onComplete={handleCompleteGoal}
               />
               <TouchableOpacity
                 style={styles.viewAllGoals}

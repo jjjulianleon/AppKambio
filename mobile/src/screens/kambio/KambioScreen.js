@@ -14,7 +14,6 @@ import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/ui';
 
 const KambioScreen = ({ navigation, route }) => {
-  const { goal } = route.params;
   const toast = useToast();
   const [amount, setAmount] = useState(DEFAULT_KAMBIO_AMOUNT.toString());
   const [description, setDescription] = useState('');
@@ -37,31 +36,27 @@ const KambioScreen = ({ navigation, route }) => {
 
     setLoading(true);
     try {
+      // NEW: No goal_id needed - goes to general savings
       const result = await createKambio({
-        goal_id: goal.id,
         amount: amountValue,
         description: description.trim() || 'Ahorro registrado'
       });
 
-      // Check if goal was completed
-      const newAmount = (goal.current_amount || 0) + amountValue;
-      const isGoalCompleted = newAmount >= goal.target_amount;
+      // Kambio registered to general savings pool
+      await haptics.success();
 
-      if (isGoalCompleted) {
-        // Goal completed - big celebration!
-        await haptics.celebrate();
-        setCelebrationData({
-          type: 'goal',
-          message: `¡Completaste tu meta "${goal.name}"! Has ahorrado ${formatCurrency(newAmount)} de ${formatCurrency(goal.target_amount)}`
-        });
-      } else {
-        // Kambio registered successfully
-        await haptics.success();
-        setCelebrationData({
-          type: 'kambio',
-          message: `Has sumado ${formatCurrency(amountValue)} a tu meta "${goal.name}"`
-        });
+      const goalsReady = result.savings_updated?.goals_ready_to_complete || 0;
+      const totalSaved = result.savings_updated?.total_saved || 0;
+
+      let message = `¡Sumaste ${formatCurrency(amountValue)} a tu ahorro general!`;
+      if (goalsReady > 0) {
+        message += `\n\nTienes ${goalsReady} meta${goalsReady > 1 ? 's' : ''} lista${goalsReady > 1 ? 's' : ''} para completar.`;
       }
+
+      setCelebrationData({
+        type: 'kambio',
+        message
+      });
 
       setShowCelebration(true);
     } catch (error) {
@@ -93,11 +88,11 @@ const KambioScreen = ({ navigation, route }) => {
           <View style={styles.headerCard}>
             <Text style={styles.emoji}>💪</Text>
             <Text style={styles.title}>¡Hiciste un Kambio!</Text>
-            <Text style={styles.subtitle}>Meta: {goal.name}</Text>
+            <Text style={styles.subtitle}>Ahorro General</Text>
             <View style={styles.goalProgressInfo}>
-              <Text style={styles.goalProgressLabel}>Progreso actual</Text>
+              <Text style={styles.goalProgressLabel}>Todas tus metas avanzan juntas</Text>
               <Text style={styles.goalProgressAmount}>
-                {formatCurrency(goal.current_amount || 0)} / {formatCurrency(goal.target_amount)}
+                Ahorra para desbloquear metas
               </Text>
             </View>
           </View>

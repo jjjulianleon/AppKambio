@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react
 import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZES, SHADOWS } from '../utils/constants';
 import { formatCurrency, calculateProgress } from '../utils/helpers';
 import ProgressBar from './ProgressBar';
+import { Button } from './ui';
 
-const GoalCard = ({ goal, onPress }) => {
+const GoalCard = ({ goal, onPress, onComplete }) => {
   const progress = calculateProgress(goal.current_amount, goal.target_amount);
   const isCompleted = goal.status === 'completed';
 
@@ -71,9 +72,9 @@ const GoalCard = ({ goal, onPress }) => {
           <View style={styles.footer}>
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{goal.kambios?.length || 0}</Text>
+                <Text style={styles.statValue}>{goal.kambio_count !== undefined ? goal.kambio_count : (goal.kambios?.length || 0)}</Text>
                 <Text style={styles.statLabel}>
-                  {(goal.kambios?.length || 0) === 1 ? 'Kambio' : 'Kambios'}
+                  {(goal.kambio_count !== undefined ? goal.kambio_count : (goal.kambios?.length || 0)) === 1 ? 'Kambio' : 'Kambios'}
                 </Text>
               </View>
               <View style={styles.divider} />
@@ -82,6 +83,21 @@ const GoalCard = ({ goal, onPress }) => {
                 <Text style={styles.statLabel}>Completado</Text>
               </View>
             </View>
+
+            {/* Complete Goal Button - NEW GENERAL SAVINGS SYSTEM */}
+            {!isCompleted && goal?.can_be_completed && onComplete && (
+              <Button
+                title="✅ Completar Meta"
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onComplete(goal);
+                }}
+                variant="success"
+                size="medium"
+                fullWidth
+                style={styles.completeButton}
+              />
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -179,6 +195,9 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: COLORS.border,
     marginHorizontal: SPACING.md
+  },
+  completeButton: {
+    marginTop: SPACING.md
   }
 });
 

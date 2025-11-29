@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, ROUTES, SHADOWS } from '../../utils/constants';
-import { getGoalById, deleteGoal } from '../../services/goalService';
+import { getGoalById, deleteGoal, completeGoal } from '../../services/goalService';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import ProgressBar from '../../components/ProgressBar';
 import { Button, EmptyState, LoadingScreen, Card } from '../../components/ui';
@@ -15,9 +16,11 @@ const GoalDetailScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadGoal();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadGoal();
+    }, [])
+  );
 
   const loadGoal = async () => {
     try {
@@ -32,6 +35,36 @@ const GoalDetailScreen = ({ navigation, route }) => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleCompleteGoal = () => {
+    haptics.warning();
+    Alert.alert(
+      'Completar Meta',
+      `¿Confirmas que quieres completar "${goal.name}"?\n\nSe restarán ${formatCurrency(goal.target_amount)} de tu ahorro general.`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+          onPress: () => haptics.light()
+        },
+        {
+          text: 'Completar',
+          style: 'default',
+          onPress: async () => {
+            try {
+              await haptics.success();
+              await completeGoal(goalId);
+              toast.success(`¡Meta "${goal.name}" completada!`);
+              navigation.goBack();
+            } catch (error) {
+              await haptics.error();
+              toast.error(error.message || 'No se pudo completar la meta');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleDelete = () => {
@@ -77,7 +110,12 @@ const GoalDetailScreen = ({ navigation, route }) => {
     );
   }
 
-  const kambios = goal.kambios || [];
+  // Use goal-specific kambios if available, otherwise show recent general activity
+  const kambios = (goal.kambios && goal.kambios.length > 0)
+    ? goal.kambios
+    : (goal.recent_kambios || []);
+
+  const isGeneralActivity = !goal.kambios || goal.kambios.length === 0;
   const isCompleted = goal.status === 'completed';
 
   return (
@@ -115,7 +153,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          Kambios realizados ({kambios.length})
+          {isGeneralActivity ? 'Actividad Reciente (General)' : `Kambios de esta meta (${kambios.length})`}
         </Text>
         {kambios.length === 0 ? (
           <EmptyState
@@ -125,7 +163,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
             actionLabel={!isCompleted ? "Registrar Kambio" : undefined}
             onActionPress={!isCompleted ? () => {
               haptics.medium();
-              navigation.navigate(ROUTES.KAMBIO, { goal });
+              navigation.navigate(ROUTES.KAMBIO);
             } : undefined}
           />
         ) : (
@@ -157,13 +195,26 @@ const GoalDetailScreen = ({ navigation, route }) => {
           title="💪 Registrar Kambio"
           onPress={() => {
             haptics.medium();
-            navigation.navigate(ROUTES.KAMBIO, { goal });
+            navigation.navigate(ROUTES.KAMBIO);
           }}
           variant="primary"
           size="large"
           fullWidth
           hapticFeedback="medium"
           style={styles.kambioButton}
+        />
+      )}
+
+      {/* Complete Goal Button - NEW GENERAL SAVINGS SYSTEM */}
+      {!isCompleted && goal?.can_be_completed && (
+        <Button
+          title="✅ Completar Meta"
+          onPress={handleCompleteGoal}
+          variant="success"
+          size="large"
+          fullWidth
+          hapticFeedback="medium"
+          style={styles.completeButton}
         />
       )}
 
@@ -249,6 +300,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic'
   },
   kambioButton: {
+    marginTop: SPACING.md
+  },
+  completeButton: {
     marginTop: SPACING.md
   },
   deleteButton: {

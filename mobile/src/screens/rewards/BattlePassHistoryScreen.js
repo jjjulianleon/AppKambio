@@ -87,67 +87,70 @@ const BattlePassHistoryScreen = ({ navigation }) => {
 
         {history.map((item, index) => {
           const isCurrent = isCurrentMonth(item.month, item.year);
-          
+
           return (
-            <View 
-              key={`${item.year}-${item.month}`} 
-              style={[
-                styles.historyCard,
-                isCurrent && styles.currentMonthCard
-              ]}
-            >
+            <View key={`${item.year}-${item.month}`}>
               {isCurrent && (
-                <View style={styles.currentBadge}>
-                  <Text style={styles.currentBadgeText}>Mes Actual</Text>
+                <View style={styles.currentBadgeContainer}>
+                  <View style={styles.currentBadge}>
+                    <Text style={styles.currentBadgeText}>Mes Actual</Text>
+                  </View>
                 </View>
               )}
-              
-              <View style={styles.cardHeader}>
-                <View>
-                  <Text style={styles.monthText}>
-                    {getMonthName(item.month, item.year)}
-                  </Text>
-                  <Text style={styles.levelText}>
-                    Nivel {item.current_level}
-                  </Text>
+
+              <View
+                style={[
+                  styles.historyCard,
+                  isCurrent && styles.currentMonthCard
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <View>
+                    <Text style={styles.monthText}>
+                      {getMonthName(item.month, item.year)}
+                    </Text>
+                    <Text style={styles.levelText}>
+                      Nivel {item.current_level}
+                    </Text>
+                  </View>
+                  <View style={styles.savingsContainer}>
+                    <Text style={styles.savingsLabel}>Ahorrado</Text>
+                    <Text style={styles.savingsAmount}>
+                      {formatCurrency(item.total_savings)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.savingsContainer}>
-                  <Text style={styles.savingsLabel}>Ahorrado</Text>
-                  <Text style={styles.savingsAmount}>
-                    {formatCurrency(item.total_savings)}
-                  </Text>
+
+                <View style={styles.progressBarContainer}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${Math.min((item.total_savings / 300) * 100, 100)}%`,
+                          backgroundColor: isCurrent ? COLORS.primary : COLORS.success
+                        }
+                      ]}
+                    />
+                  </View>
                 </View>
+
+                {item.unlockedRewards > 0 && (
+                  <View style={styles.rewardsRow}>
+                    <Text style={styles.rewardsText}>
+                      🎁 {item.unlockedRewards} recompensa{item.unlockedRewards > 1 ? 's' : ''} desbloqueada{item.unlockedRewards > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                )}
+
+                {item.completedChallenges > 0 && (
+                  <View style={styles.challengesRow}>
+                    <Text style={styles.challengesText}>
+                      ⚡ {item.completedChallenges} desafío{item.completedChallenges > 1 ? 's' : ''} completado{item.completedChallenges > 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                )}
               </View>
-
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[
-                      styles.progressFill, 
-                      { 
-                        width: `${Math.min((item.total_savings / 300) * 100, 100)}%`,
-                        backgroundColor: isCurrent ? COLORS.primary : COLORS.success
-                      }
-                    ]} 
-                  />
-                </View>
-              </View>
-
-              {item.unlockedRewards > 0 && (
-                <View style={styles.rewardsRow}>
-                  <Text style={styles.rewardsText}>
-                    🎁 {item.unlockedRewards} recompensa{item.unlockedRewards > 1 ? 's' : ''} desbloqueada{item.unlockedRewards > 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
-
-              {item.completedChallenges > 0 && (
-                <View style={styles.challengesRow}>
-                  <Text style={styles.challengesText}>
-                    ⚡ {item.completedChallenges} desafío{item.completedChallenges > 1 ? 's' : ''} completado{item.completedChallenges > 1 ? 's' : ''}
-                  </Text>
-                </View>
-              )}
             </View>
           );
         })}
@@ -248,19 +251,23 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.primary
   },
+  currentBadgeContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 0, // Lifted up to sit on top
+    zIndex: 1,
+    paddingRight: SPACING.lg
+  },
   currentBadge: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
     backgroundColor: COLORS.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.sm
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    borderTopLeftRadius: BORDER_RADIUS.md,
+    borderTopRightRadius: BORDER_RADIUS.md,
   },
   currentBadgeText: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.white,
-    fontWeight: '600'
+    fontSize: FONT_SIZES.sm,
+    color: '#FFFFFF', // Force white
+    fontWeight: '700'
   },
   cardHeader: {
     flexDirection: 'row',
